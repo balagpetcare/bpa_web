@@ -13,6 +13,7 @@ import {
   getPublicImpactStats,
 } from '@/lib/api/community-care';
 import { getSeoData } from '@/lib/api/seo';
+import { getMembershipOverview } from '@/lib/api/community-membership';
 import type { CommunityZonePublic } from '@/types/bpa.types';
 
 import HeroDashboardSection from './components/HeroDashboardSection';
@@ -25,6 +26,7 @@ import DiagnosticCenterSection from './components/DiagnosticCenterSection';
 import RoadmapSection from './components/RoadmapSection';
 import AllocationSection from './components/AllocationSection';
 import CardPreviewSection from './components/CardPreviewSection';
+import MembershipPricingSection from './components/MembershipPricingSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +67,7 @@ export default async function CommunityPetCarePage() {
     diagnosticResult,
     contributorsResult,
     impactResult,
+    membershipOverviewResult,
   ] = await Promise.allSettled([
     getPublicZones({ next: { revalidate: 300, tags: ['community-zones'] } } as RequestInit),
     getCareFundOverview({ next: { revalidate: 300, tags: ['care-fund-overview'] } } as RequestInit),
@@ -74,6 +77,7 @@ export default async function CommunityPetCarePage() {
     getPublicDiagnosticServices({ next: { revalidate: 3600, tags: ['diagnostic-services'] } } as RequestInit),
     getRecentPublicContributors(12, { next: { revalidate: 60, tags: ['recent-contributors'] } } as RequestInit),
     getPublicImpactStats({ next: { revalidate: 300, tags: ['impact-stats'] } } as RequestInit),
+    getMembershipOverview({ next: { revalidate: 300, tags: ['membership-overview'] } } as RequestInit),
   ]);
 
   const zoneList: CommunityZonePublic[] = zonesResult.status === 'fulfilled' ? zonesResult.value : [];
@@ -84,6 +88,7 @@ export default async function CommunityPetCarePage() {
   const diagnosticServices = diagnosticResult.status === 'fulfilled' ? diagnosticResult.value : [];
   const recentContributors = contributorsResult.status === 'fulfilled' ? (contributorsResult.value ?? []) : [];
   const impactStats = impactResult.status === 'fulfilled' ? impactResult.value : null;
+  const membershipOverview = membershipOverviewResult.status === 'fulfilled' ? membershipOverviewResult.value : null;
 
   const heroStats = {
     totalContributors: overview?.totalContributors ?? 0,
@@ -97,7 +102,10 @@ export default async function CommunityPetCarePage() {
       {/* 1 — Premium hero impact dashboard */}
       <HeroDashboardSection stats={heroStats} />
 
-      {/* 2 — Initiative overview */}
+      {/* 2 — Membership Pricing */}
+      <MembershipPricingSection overview={membershipOverview} />
+
+      {/* 3 — Initiative overview */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -127,12 +135,20 @@ export default async function CommunityPetCarePage() {
                   a digital recognition card with service access benefits, valid for 5 years.
                 </p>
               </div>
-              <Link
-                href="/community-pet-care/contribute"
-                className="inline-flex items-center gap-2 mt-8 bg-(--bpa-green) text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-              >
-                Become a Care Partner <ChevronRight size={16} />
-              </Link>
+              <div className="flex flex-wrap gap-3 mt-8">
+                <Link
+                  href="/community-pet-care/contribute"
+                  className="inline-flex items-center gap-2 bg-(--bpa-green) text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Become a Care Partner <ChevronRight size={16} />
+                </Link>
+                <Link
+                  href="/community-pet-care/membership/upgrade"
+                  className="inline-flex items-center gap-2 border border-(--bpa-green) text-(--bpa-green) px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-colors"
+                >
+                  Upgrade Membership <ChevronRight size={16} />
+                </Link>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
