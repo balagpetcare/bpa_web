@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Info, CheckCircle, Clock, Copy, Tag, Shield, PawPrint } from 'lucide-react';
+import { Info, CheckCircle, Clock, Copy, Tag, Shield, PawPrint, MapPin } from 'lucide-react';
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
@@ -13,12 +13,14 @@ import {
   initiateMembershipPurchase,
   submitTransaction,
 } from '@/lib/api/community-membership';
+import { getPublicZones } from '@/lib/api/community-care';
 import { assertSafePaymentUrl } from '@/lib/utils/payment-redirect';
 import type {
   MembershipTierPublic,
   InitiatePurchaseResponse,
   MfsInstructions,
 } from '@/lib/api/community-membership';
+import type { CommunityZonePublic } from '@/types/bpa.types';
 
 // ─── Constants ────────────────────────────────────────────────────
 
@@ -29,6 +31,37 @@ const LEGAL_DISCLAIMER =
   'It does not represent ownership, equity, profit-sharing, investment, or financial return. ' +
   'Service discounts and third-party benefits are subject to availability and partner terms.';
 
+function toSafeNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function resolveTierPrice(tier: MembershipTierPublic): number | null {
+  return toSafeNumber(tier.currentPriceBdt)
+    ?? toSafeNumber(tier.launchPriceBdt)
+    ?? toSafeNumber(tier.regularPriceBdt);
+}
+
+function resolveTierBenefits(tier: MembershipTierPublic) {
+  return (tier.benefits ?? [])
+    .map((benefit, index) => {
+      const titleEn = benefit.titleEn ?? benefit.title ?? benefit.nameEn ?? benefit.name ?? '';
+      const titleBn = benefit.titleBn ?? benefit.nameBn ?? null;
+      const title = titleEn || titleBn || '';
+      const description = benefit.descriptionEn ?? benefit.descriptionBn ?? benefit.description ?? null;
+      const id = benefit.id ?? benefit.slug ?? `${index}-${title}`;
+      return {
+        id,
+        title,
+        titleEn,
+        titleBn,
+        description,
+      };
+    })
+    .filter((benefit) => benefit.title.trim().length > 0);
+}
+
 // ─── Form schema ─────────────────────────────────────────────────
 
 const schema = z.object({
@@ -37,7 +70,7 @@ const schema = z.object({
   memberEmail: z.string().email('Invalid email').optional().or(z.literal('')),
   memberAddress: z.string().max(300).optional().or(z.literal('')),
   petCount: z.string().regex(/^\d*$/, 'Enter a valid number').optional(),
-  preferredZone: z.string().max(100).optional().or(z.literal('')),
+  preferredZoneId: z.string().uuid('Please select your preferred clinic zone'),
   disclaimerConsent: z.literal(true, { message: 'You must acknowledge the disclaimer' }),
   hasConsented: z.literal(true, { message: 'You must consent to proceed' }),
 });
@@ -72,7 +105,18 @@ function discountRangeSummary(tier: MembershipTierPublic): string | null {
 // ─── Tier summary card ─────────────────────────────────────────────
 
 function TierSummary({ tier }: { tier: MembershipTierPublic }) {
-  const isOffer = tier.isOfferActive && tier.launchPriceBdt < tier.regularPriceBdt;
+  const launchPrice = toSafeNumber(tier.launchPriceBdt);
+  const regularPrice = toSafeNumber(tier.regularPriceBdt);
+  const currentPrice = resolveTierPrice(tier);
+  const benefits = resolveTierBenefits(tier);
+  const isOffer = Boolean(
+    tier.isOfferActive &&
+    launchPrice !== null &&
+    regularPrice !== null &&
+    currentPrice !== null &&
+    launchPrice < regularPrice &&
+    currentPrice === launchPrice,
+  );
   const discountLine = discountRangeSummary(tier);
 
   return (
@@ -93,13 +137,13 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
           )}
         </div>
         <div className="text-right shrink-0">
-          {isOffer && (
+          {isOffer && regularPrice !== null && (
             <p className="text-xs text-gray-400 line-through">
-              ৳{Number(tier.regularPriceBdt).toLocaleString()}
+              ৳{regularPrice.toLocaleString()}
             </p>
           )}
           <p className="text-2xl font-bold text-(--bpa-green)">
-            ৳{Number(tier.currentPriceBdt).toLocaleString()}
+            {currentPrice !== null ? `৳${currentPrice.toLocaleString()}` : 'Price unavailable'}
           </p>
           <p className="text-xs text-gray-500">{tier.validityMonths} month membership</p>
           {isOffer && (
@@ -125,24 +169,28 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
       </div>
 
       {/* Benefits */}
-      {tier.benefits.length > 0 && (
+      {benefits.length > 0 ? (
         <div>
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center gap-1.5">
             <Shield size={11} /> Included benefits
           </p>
           <ul className="space-y-1">
-            {tier.benefits.map((b) => (
-              <li key={b.id} className="text-xs text-gray-600 flex items-start gap-1.5">
+            {benefits.map((b, index) => (
+              <li key={b.id ?? `${index}-${b.title}`} className="text-xs text-gray-600 flex items-start gap-1.5">
                 <span className="text-(--bpa-green) font-bold mt-0.5 shrink-0">✓</span>
                 <span>
-                  {b.titleEn}
-                  {b.descriptionEn && (
-                    <span className="text-gray-400"> — {b.descriptionEn}</span>
+                  {b.title}
+                  {b.description && (
+                    <span className="text-gray-400"> — {b.description}</span>
                   )}
                 </span>
               </li>
             ))}
           </ul>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-gray-300 bg-white/60 px-3 py-2 text-xs text-gray-500">
+          No benefits are listed for this tier yet.
         </div>
       )}
     </div>
@@ -341,6 +389,8 @@ interface Props {
 export default function MembershipPurchaseFlow({ tierSlug }: Props) {
   const [tier, setTier] = useState<MembershipTierPublic | null>(null);
   const [tierError, setTierError] = useState('');
+  const [zones, setZones] = useState<CommunityZonePublic[]>([]);
+  const [zonesLoading, setZonesLoading] = useState(true);
   const [step, setStep] = useState<Step>('form');
   const [purchaseResult, setPurchaseResult] = useState<InitiatePurchaseResponse | null>(null);
   const [submitError, setSubmitError] = useState('');
@@ -364,6 +414,13 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
       });
   }, [tierSlug]);
 
+  useEffect(() => {
+    getPublicZones()
+      .then((zs) => setZones(zs.filter((z) => z.status === 'active')))
+      .catch(() => setZones([]))
+      .finally(() => setZonesLoading(false));
+  }, []);
+
   const {
     register,
     handleSubmit,
@@ -376,7 +433,7 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
       memberEmail: '',
       memberAddress: '',
       petCount: '',
-      preferredZone: '',
+      preferredZoneId: '',
       disclaimerConsent: false as never,
       hasConsented: false as never,
     },
@@ -393,7 +450,7 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
         memberEmail: data.memberEmail || undefined,
         memberAddress: data.memberAddress || undefined,
         petCount: Number.isFinite(petCount) ? petCount : undefined,
-        preferredZone: data.preferredZone || undefined,
+        preferredZoneId: data.preferredZoneId || undefined,
       });
       setPurchaseResult(result);
       if (result.paymentMode === 'manual' && result.mfs) {
@@ -410,6 +467,8 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     }
   };
+
+  const selectedTierPrice = tier ? resolveTierPrice(tier) : null;
 
   // ── Error states ────────────────────────────────────────────────
 
@@ -531,12 +590,35 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
             </p>
           </div>
 
-          <FormField
-            label="Preferred Zone"
-            placeholder="e.g. Mirpur, Gulshan (optional)"
-            error={errors.preferredZone?.message}
-            {...register('preferredZone')}
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              <span className="flex items-center gap-1.5">
+                <MapPin size={14} className="text-(--bpa-green)" />
+                Preferred Clinic Zone <span className="text-red-500 ml-0.5">*</span>
+              </span>
+            </label>
+            {zonesLoading ? (
+              <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
+            ) : (
+              <select
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green) focus:border-transparent bg-white"
+                {...register('preferredZoneId')}
+              >
+                <option value="">— Select your preferred zone —</option>
+                {zones.map((z) => (
+                  <option key={z.id} value={z.id}>
+                    {z.name} ({z.city})
+                  </option>
+                ))}
+              </select>
+            )}
+            {errors.preferredZoneId && (
+              <p className="text-xs text-red-600 mt-1">{errors.preferredZoneId.message as string}</p>
+            )}
+            <p className="text-xs text-gray-400 mt-1">
+              Your vote helps BPA prioritise which zone gets the first clinic.
+            </p>
+          </div>
         </div>
 
         {/* Legal disclaimer */}
@@ -579,10 +661,15 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
           size="lg"
           loading={isSubmitting}
           className="w-full"
-          disabled={!tier || isSubmitting}
+          disabled={!tier || selectedTierPrice === null || isSubmitting}
         >
           Proceed to Payment
         </Button>
+        {tier && selectedTierPrice === null && (
+          <p className="text-xs text-amber-700 text-center">
+            Price unavailable for this tier right now. Please try again later.
+          </p>
+        )}
       </form>
     </div>
   );

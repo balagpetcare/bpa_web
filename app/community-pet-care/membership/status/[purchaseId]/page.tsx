@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CheckCircle, Clock, XCircle, AlertCircle, ArrowUpCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, AlertCircle, ArrowUpCircle, MapPin } from 'lucide-react';
 import { getPurchaseStatus } from '@/lib/api/community-membership';
 
 export const dynamic = 'force-dynamic';
@@ -115,6 +115,17 @@ export default async function MembershipStatusPage({ params }: Props) {
               <div className="flex items-center justify-between">
                 <p className="text-sm text-gray-500">Expires</p>
                 <p className="font-semibold">{formatDate(purchase.expiresAt)}</p>
+              </div>
+            )}
+            {purchase.preferredZone && (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500 flex items-center gap-1">
+                  <MapPin size={13} /> Preferred Zone
+                </p>
+                <p className="font-semibold text-(--bpa-navy)">
+                  {purchase.preferredZone.name}
+                  <span className="text-xs text-gray-400 font-normal ml-1">({purchase.preferredZone.city})</span>
+                </p>
               </div>
             )}
           </div>

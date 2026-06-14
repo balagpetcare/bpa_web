@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { MapPin, Users, Heart, ChevronRight, Building2, Clock, TrendingUp, CreditCard } from 'lucide-react';
 import { buildMetadata } from '@/lib/seo';
 import { getPublicZones, getCareFundOverview } from '@/lib/api/community-care';
+import { getZoneDemand } from '@/lib/api/community-membership';
 import { getSeoData } from '@/lib/api/seo';
 import type { CommunityZonePublic } from '@/types/bpa.types';
 
@@ -80,13 +81,15 @@ function ZoneStatusBadge({ status }: { status: string }) {
 }
 
 export default async function ZonesPage() {
-  const [zonesResult, overviewResult] = await Promise.allSettled([
+  const [zonesResult, overviewResult, demandResult] = await Promise.allSettled([
     getPublicZones({ next: { revalidate: 300, tags: ['community-zones'] } } as RequestInit),
     getCareFundOverview({ next: { revalidate: 300, tags: ['care-fund-overview'] } } as RequestInit),
+    getZoneDemand({ next: { revalidate: 300, tags: ['zone-demand'] } } as RequestInit),
   ]);
 
   const zones: CommunityZonePublic[] = zonesResult.status === 'fulfilled' ? zonesResult.value : [];
   const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
+  const demandRanking = demandResult.status === 'fulfilled' ? demandResult.value : [];
 
   const totalContributors = overview?.totalContributors ?? 0;
   const totalActiveCards = overview?.totalActiveCards ?? 0;
@@ -360,6 +363,63 @@ export default async function ZonesPage() {
           )}
         </div>
       </div>
+
+      {/* ─── Zone Priority Ranking ─────────────────────────────────── */}
+      {demandRanking.length > 0 && (
+        <div className="py-16 bg-white border-t border-gray-100">
+          <div className="max-w-3xl mx-auto px-6 sm:px-8 lg:px-12">
+            <div className="mb-8">
+              <p className="text-xs font-bold text-(--bpa-green) uppercase tracking-[0.18em] mb-2">
+                Care Partner Card Members
+              </p>
+              <h2 className="text-2xl font-black text-(--bpa-navy) mb-2">Zone Priority Ranking</h2>
+              <p className="text-sm text-gray-500">
+                Zones are ranked by the number of paid Care Partner Card members who chose them as their preferred clinic location.
+                The highest-ranked zone gets BPA&apos;s first clinic.
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              {demandRanking.map((zone) => {
+                const maxScore = demandRanking[0]?.demandScore ?? 1;
+                const pct = maxScore > 0 ? Math.min(100, Math.round((zone.demandScore / maxScore) * 100)) : 0;
+                const isTop = zone.rank === 1;
+                return (
+                  <div
+                    key={zone.id}
+                    className={`flex items-center gap-4 p-4 rounded-xl border ${isTop ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-gray-50'}`}
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm font-black shrink-0 ${isTop ? 'bg-(--bpa-green) text-white' : 'bg-white border border-gray-200 text-gray-500'}`}>
+                      #{zone.rank}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <p className="font-semibold text-(--bpa-navy) text-sm truncate">{zone.name}</p>
+                        <p className="text-xs text-gray-500 shrink-0">{zone.paidPurchases} paid member{zone.paidPurchases !== 1 ? 's' : ''}</p>
+                      </div>
+                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all ${isTop ? 'bg-(--bpa-green)' : 'bg-gray-400'}`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    {isTop && (
+                      <span className="text-[10px] bg-(--bpa-green) text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wide shrink-0">
+                        #1 Priority
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-gray-400 mt-6 text-center">
+              Ranking updates in real-time as Care Partner Cards are purchased.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Back link strip */}
       <div className="py-8 bg-white border-t border-gray-100">

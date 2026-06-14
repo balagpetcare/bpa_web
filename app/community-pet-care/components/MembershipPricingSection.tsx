@@ -19,6 +19,12 @@ function CountdownTimer({ seconds }: { seconds: number }) {
   );
 }
 
+function toSafeNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 export default function MembershipPricingSection({ overview }: Props) {
   const tiers = overview?.tiers ?? [];
   const services = overview?.services ?? [];
@@ -92,7 +98,9 @@ export default function MembershipPricingSection({ overview }: Props) {
 
           <div className="grid lg:grid-cols-3 gap-6">
             {visibleTiers.map((tier) => {
-              const isOffer = isOfferActive && tier.currentPriceBdt < tier.regularPriceBdt;
+              const currentPrice = toSafeNumber(tier.currentPriceBdt);
+              const regularPrice = toSafeNumber(tier.regularPriceBdt);
+              const isOffer = isOfferActive && currentPrice !== null && regularPrice !== null && currentPrice < regularPrice;
               return (
                 <div
                   key={tier.id}
@@ -117,15 +125,21 @@ export default function MembershipPricingSection({ overview }: Props) {
                     {isOffer ? (
                       <div className="flex items-baseline gap-2">
                         <span className="text-3xl font-bold text-(--bpa-green)">
-                          {new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(tier.currentPriceBdt)}
+                          {currentPrice !== null
+                            ? new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(currentPrice)
+                            : 'Price unavailable'}
                         </span>
-                        <span className="text-lg text-gray-400 line-through">
-                          {new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(tier.regularPriceBdt)}
-                        </span>
+                        {regularPrice !== null && (
+                          <span className="text-lg text-gray-400 line-through">
+                            {new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(regularPrice)}
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <span className="text-3xl font-bold text-(--bpa-navy)">
-                        {new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(tier.currentPriceBdt)}
+                        {currentPrice !== null
+                          ? new Intl.NumberFormat('en-BD', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(currentPrice)
+                          : 'Price unavailable'}
                       </span>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
@@ -151,10 +165,10 @@ export default function MembershipPricingSection({ overview }: Props) {
                     <div className="border-t border-gray-100 pt-4 mt-auto">
                       <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Benefits</p>
                       <ul className="space-y-1.5 mb-4">
-                        {tier.benefits.slice(0, 6).map((b) => (
-                          <li key={b.id} className="flex items-start gap-1.5 text-sm text-gray-600">
+                        {tier.benefits.slice(0, 6).map((b, index) => (
+                          <li key={b.id ?? `${index}-${b.titleEn ?? b.title ?? ''}`} className="flex items-start gap-1.5 text-sm text-gray-600">
                             <CheckCircle size={14} className="text-(--bpa-green) shrink-0 mt-0.5" />
-                            <span>{b.titleEn}</span>
+                            <span>{b.titleEn || b.title || b.nameEn || b.name || 'Benefit'}</span>
                           </li>
                         ))}
                       </ul>
