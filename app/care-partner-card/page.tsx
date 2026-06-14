@@ -118,7 +118,7 @@ export default function CarePartnerCardPage() {
                   </div>
                   <div>
                     <dt className="text-xs text-gray-400">Amount</dt>
-                    <dd className="font-bold text-(--bpa-green)">৳{Number(result.amountBdt).toLocaleString()}</dd>
+                    <dd className="font-bold text-(--bpa-green)">৳{Number(result.amountBdt ?? 0).toLocaleString()}</dd>
                   </div>
                 </dl>
               </div>

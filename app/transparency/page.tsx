@@ -26,8 +26,12 @@ function fmtDate(s: string) {
   return new Date(s).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function money(value: string | number) {
-  return `৳${Number(value).toLocaleString('en-BD', { maximumFractionDigits: 0 })}`;
+function money(value: string | number | null | undefined) {
+  return `৳${Number(value ?? 0).toLocaleString('en-BD', { maximumFractionDigits: 0 })}`;
+}
+
+function count(value: number | null | undefined) {
+  return (value ?? 0).toLocaleString('en-BD');
 }
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
@@ -82,7 +86,7 @@ export default async function TransparencyPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[
                   { label: 'Collected Care Partner Contributions', value: money(summary.totalCollectedBdt), note: 'Paid contributions with successful payments' },
-                  { label: 'Contributors', value: summary.totalContributors.toLocaleString('en-BD'), note: 'Paid Care Partner records' },
+                  { label: 'Contributors', value: count(summary.totalContributors), note: 'Paid Care Partner records' },
                   { label: 'Published Report Spending', value: money(summary.totalPublishedSpentBdt), note: 'Manual spending reported by BPA' },
                   { label: 'Published Report Balance', value: money(summary.balanceBdt), note: 'Collected minus published report spending' },
                 ].map(({ label, value, note }) => (
@@ -105,20 +109,24 @@ export default async function TransparencyPage() {
                   </Link>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  {summary.zones.map((zone) => (
-                    <div key={zone.id} className="rounded-lg bg-gray-50 p-4">
-                      <div className="flex justify-between gap-3 mb-2">
-                        <div>
-                          <p className="font-semibold text-(--bpa-navy)">{zone.name}</p>
-                          <p className="text-xs text-gray-500">{zone.currentContributors.toLocaleString('en-BD')} of {zone.targetContributors.toLocaleString('en-BD')} contributors</p>
+                  {summary.zones.map((zone) => {
+                    const progressPercent = zone.progressPercent ?? 0;
+
+                    return (
+                      <div key={zone.id} className="rounded-lg bg-gray-50 p-4">
+                        <div className="flex justify-between gap-3 mb-2">
+                          <div>
+                            <p className="font-semibold text-(--bpa-navy)">{zone.name}</p>
+                            <p className="text-xs text-gray-500">{count(zone.currentContributors)} of {count(zone.targetContributors)} contributors</p>
+                          </div>
+                          <p className="text-sm font-bold text-(--bpa-green)">{progressPercent}%</p>
                         </div>
-                        <p className="text-sm font-bold text-(--bpa-green)">{zone.progressPercent}%</p>
+                        <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
+                          <div className="h-full bg-(--bpa-green)" style={{ width: `${progressPercent}%` }} />
+                        </div>
                       </div>
-                      <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
-                        <div className="h-full bg-(--bpa-green)" style={{ width: `${zone.progressPercent}%` }} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </>

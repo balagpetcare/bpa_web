@@ -1,10 +1,30 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Heart, MapPin, ShieldCheck, Users, ChevronRight, Info } from 'lucide-react';
+import { ChevronRight, Info, MapPin } from 'lucide-react';
 import { buildMetadata } from '@/lib/seo';
-import { getPublicZones, getCareFundOverview } from '@/lib/api/community-care';
+import {
+  getPublicZones,
+  getCareFundOverview,
+  getPublicCarePartnerBenefits,
+  getPublicSocialImpactPrograms,
+  getPublicRoadmapItems,
+  getPublicDiagnosticServices,
+  getRecentPublicContributors,
+  getPublicImpactStats,
+} from '@/lib/api/community-care';
 import { getSeoData } from '@/lib/api/seo';
 import type { CommunityZonePublic } from '@/types/bpa.types';
+
+import HeroDashboardSection from './components/HeroDashboardSection';
+import BenefitsSection from './components/BenefitsSection';
+import SocialImpactSection from './components/SocialImpactSection';
+import ImpactCountersSection from './components/ImpactCountersSection';
+import ContributorWallSection from './components/ContributorWallSection';
+import TransparencyStrip from './components/TransparencyStrip';
+import DiagnosticCenterSection from './components/DiagnosticCenterSection';
+import RoadmapSection from './components/RoadmapSection';
+import AllocationSection from './components/AllocationSection';
+import CardPreviewSection from './components/CardPreviewSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,7 +36,15 @@ export async function generateMetadata(): Promise<Metadata> {
       description:
         'Support 8 initial 24/7 Community Pet Clinics in Dhaka. Contribute ৳3,000 to become a BPA Care Partner and receive your digital Care Partner Card.',
       canonical: '/community-pet-care',
-      keywords: ['community pet care', 'care partner', 'BPA', 'pet clinic Dhaka', 'community contribution'],
+      keywords: [
+        'community pet care',
+        'care partner',
+        'BPA',
+        'pet clinic Dhaka',
+        'community contribution',
+        'animal welfare Bangladesh',
+        'diagnostic center',
+      ],
     },
     seo,
   );
@@ -28,76 +56,61 @@ const LEGAL_DISCLAIMER =
   'Product, medicine, food, accessories, and third-party cost discounts are not guaranteed.';
 
 export default async function CommunityPetCarePage() {
-  const [zones, overview] = await Promise.allSettled([
+  const [
+    zonesResult,
+    overviewResult,
+    benefitsResult,
+    socialResult,
+    roadmapResult,
+    diagnosticResult,
+    contributorsResult,
+    impactResult,
+  ] = await Promise.allSettled([
     getPublicZones({ next: { revalidate: 300, tags: ['community-zones'] } } as RequestInit),
     getCareFundOverview({ next: { revalidate: 300, tags: ['care-fund-overview'] } } as RequestInit),
+    getPublicCarePartnerBenefits({ next: { revalidate: 3600, tags: ['care-partner-benefits'] } } as RequestInit),
+    getPublicSocialImpactPrograms({ next: { revalidate: 3600, tags: ['social-impact-programs'] } } as RequestInit),
+    getPublicRoadmapItems({ next: { revalidate: 3600, tags: ['roadmap-items'] } } as RequestInit),
+    getPublicDiagnosticServices({ next: { revalidate: 3600, tags: ['diagnostic-services'] } } as RequestInit),
+    getRecentPublicContributors(12, { next: { revalidate: 60, tags: ['recent-contributors'] } } as RequestInit),
+    getPublicImpactStats({ next: { revalidate: 300, tags: ['impact-stats'] } } as RequestInit),
   ]);
 
-  const zoneList: CommunityZonePublic[] = zones.status === 'fulfilled' ? zones.value : [];
-  const stats = overview.status === 'fulfilled' ? overview.value : null;
+  const zoneList: CommunityZonePublic[] = zonesResult.status === 'fulfilled' ? zonesResult.value : [];
+  const overview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
+  const benefits = benefitsResult.status === 'fulfilled' ? benefitsResult.value : [];
+  const socialPrograms = socialResult.status === 'fulfilled' ? socialResult.value : [];
+  const roadmapItems = roadmapResult.status === 'fulfilled' ? roadmapResult.value : [];
+  const diagnosticServices = diagnosticResult.status === 'fulfilled' ? diagnosticResult.value : [];
+  const recentContributors = contributorsResult.status === 'fulfilled' ? (contributorsResult.value ?? []) : [];
+  const impactStats = impactResult.status === 'fulfilled' ? impactResult.value : null;
+
+  const heroStats = {
+    totalContributors: overview?.totalContributors ?? 0,
+    totalRaised: Number(overview?.totalRaised ?? overview?.totalAmountBdt ?? 0),
+    totalActiveCards: overview?.totalActiveCards ?? 0,
+    zonesCount: zoneList.filter((z) => z.status === 'active').length || zoneList.length,
+  };
 
   return (
     <>
-      {/* Hero */}
-      <section className="bg-(--bpa-navy) text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl">
-            <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-4">
-              Bangladesh Pet Association
-            </p>
-            <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-6">
-              Community Pet Care Initiative
-            </h1>
-            <p className="text-xl text-gray-300 leading-relaxed mb-8">
-              BPA is building 8 initial 24/7 Community Pet Clinics across Dhaka — funded entirely by community contributions.
-              Join 10,000 pet owners in each zone to make it happen.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/community-pet-care/contribute"
-                className="inline-flex items-center gap-2 bg-(--bpa-green) text-white px-7 py-3.5 rounded-lg font-semibold hover:opacity-90 transition-opacity"
-              >
-                <Heart size={18} /> Contribute ৳3,000
-              </Link>
-              <Link
-                href="/community-pet-care/zones"
-                className="inline-flex items-center gap-2 border-2 border-white text-white px-7 py-3.5 rounded-lg font-semibold hover:bg-white hover:text-(--bpa-navy) transition-colors"
-              >
-                <MapPin size={18} /> View Zones
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 1 — Premium hero impact dashboard */}
+      <HeroDashboardSection stats={heroStats} />
 
-      {/* Stats bar */}
-      {stats && (
-        <section className="bg-(--bpa-green) text-white py-8">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-3xl font-bold">{stats.totalContributors.toLocaleString()}</div>
-                <div className="text-sm opacity-80 mt-1">Total Contributors</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold">৳{Number(stats.totalAmountBdt).toLocaleString()}</div>
-                <div className="text-sm opacity-80 mt-1">Total Collected</div>
-              </div>
-              <div className="col-span-2 sm:col-span-1">
-                <div className="text-3xl font-bold">{stats.totalActiveCards.toLocaleString()}</div>
-                <div className="text-sm opacity-80 mt-1">Active Care Cards</div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Initiative overview */}
-      <section className="py-20">
+      {/* 2 — Initiative overview */}
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-start">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-3xl font-bold text-(--bpa-navy) mb-6">What is Community Pet Care?</h2>
+              <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-4">
+                What is Community Pet Care?
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-(--bpa-navy) mb-2">
+                Community-Funded. Community-Owned.
+              </h2>
+              <p className="text-gray-500 text-lg mb-6">
+                সম্প্রদায়-অর্থায়িত। সম্প্রদায়-মালিকানাধীন।
+              </p>
               <div className="space-y-4 text-gray-600 leading-relaxed">
                 <p>
                   Bangladesh Pet Association is launching 8 Community Pet Clinics across Dhaka —
@@ -116,26 +129,24 @@ export default async function CommunityPetCarePage() {
               </div>
               <Link
                 href="/community-pet-care/contribute"
-                className="inline-flex items-center gap-2 mt-8 bg-(--bpa-green) text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                className="inline-flex items-center gap-2 mt-8 bg-(--bpa-green) text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
               >
                 Become a Care Partner <ChevronRight size={16} />
               </Link>
             </div>
-            <div className="space-y-4">
+
+            <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Heart, title: '৳3,000 One-Time Contribution', desc: 'A single contribution supports your zone\'s community clinic for 5 years.' },
-                { icon: ShieldCheck, title: 'Digital Care Partner Card', desc: 'Receive a QR-verified digital card — your proof of contribution and benefit access.' },
-                { icon: MapPin, title: '8 Zones in Dhaka', desc: 'Each zone serves thousands of local pet owners with round-the-clock veterinary support.' },
-                { icon: Users, title: '10,000 Contributors per Zone', desc: 'Community-funded means community-owned. Every contributor counts.' },
-              ].map(({ icon: Icon, title, desc }) => (
-                <div key={title} className="flex gap-4 p-5 bg-gray-50 rounded-xl">
-                  <div className="w-10 h-10 bg-(--bpa-green) rounded-lg flex items-center justify-center shrink-0">
-                    <Icon size={20} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-(--bpa-navy) mb-1">{title}</h3>
-                    <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                  </div>
+                { value: '৳3,000', label: 'One-Time Contribution', labelBn: 'একবারের অবদান', desc: 'A single contribution supports your zone\'s community clinic for 5 years.' },
+                { value: '5 Yrs', label: 'Card Validity', labelBn: 'কার্ডের মেয়াদ', desc: 'Your digital Care Partner Card is valid for a full 5-year cycle.' },
+                { value: '8', label: 'Zones in Dhaka', labelBn: 'ঢাকায় জোন', desc: 'Each zone serves thousands of local pet owners with round-the-clock veterinary support.' },
+                { value: '10K', label: 'Contributors / Zone', labelBn: 'প্রতি জোনে অবদানকারী', desc: 'Community-funded means community-owned. Every contributor counts.' },
+              ].map(({ value, label, labelBn, desc }) => (
+                <div key={label} className="bg-(--bpa-green-light) rounded-2xl p-5">
+                  <div className="text-3xl font-bold text-(--bpa-green) mb-1">{value}</div>
+                  <div className="font-semibold text-(--bpa-navy) text-sm">{label}</div>
+                  <div className="text-xs text-gray-400 mb-2">{labelBn}</div>
+                  <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
                 </div>
               ))}
             </div>
@@ -143,27 +154,43 @@ export default async function CommunityPetCarePage() {
         </div>
       </section>
 
-      {/* Zone progress summary */}
+      {/* 3 — Care Partner Benefits */}
+      <BenefitsSection benefits={benefits} />
+
+      {/* 4 — Beyond Your Own Pet */}
+      <SocialImpactSection programs={socialPrograms} />
+
+      {/* 5 — Impact counters */}
+      <ImpactCountersSection stats={impactStats} />
+
+      {/* 6 — Zone progress summary */}
       {zoneList.length > 0 && (
         <section className="py-20 bg-gray-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-(--bpa-navy) mb-3">8 Dhaka Zones</h2>
-              <p className="text-gray-500 max-w-xl mx-auto">
-                Each zone is raising funds independently. Choose your zone when you contribute.
+              <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-3">
+                Zones Progress
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-(--bpa-navy) mb-2">
+                8 Dhaka Zones
+              </h2>
+              <p className="text-gray-500">
+                ৮টি ঢাকা জোন — প্রতিটি জোন স্বাধীনভাবে তহবিল সংগ্রহ করছে।
               </p>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {zoneList.slice(0, 8).map((zone: CommunityZonePublic) => {
-                const pct = Math.min(Math.round((zone.currentContributors / zone.targetContributors) * 100), 100);
+                const current = zone.currentContributors ?? 0;
+                const target = zone.targetContributors ?? 0;
+                const pct = target > 0 ? Math.min(Math.round((current / target) * 100), 100) : 0;
                 return (
-                  <div key={zone.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+                  <div key={zone.id} className="bg-white rounded-2xl border border-gray-200 p-5 hover:shadow-md hover:-translate-y-0.5 transition-all">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h3 className="font-semibold text-(--bpa-navy) text-sm">{zone.name}</h3>
-                        <p className="text-xs text-gray-400">{zone.city}, {zone.district}</p>
+                        <h3 className="font-bold text-(--bpa-navy) text-sm">{zone.name}</h3>
+                        <p className="text-xs text-gray-400 mt-0.5">{zone.city}, {zone.district}</p>
                       </div>
-                      <span className="text-xs font-bold text-(--bpa-green)">{pct}%</span>
+                      <span className="text-sm font-bold text-(--bpa-green)">{pct}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
                       <div
@@ -172,45 +199,50 @@ export default async function CommunityPetCarePage() {
                       />
                     </div>
                     <p className="text-xs text-gray-500">
-                      {zone.currentContributors.toLocaleString()} / {zone.targetContributors.toLocaleString()} contributors
+                      {current.toLocaleString()} / {target.toLocaleString()} contributors
                     </p>
+                    <span className={`inline-block mt-2 text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                      zone.status === 'active' ? 'bg-green-100 text-green-700' :
+                      zone.status === 'coming_soon' ? 'bg-amber-100 text-amber-700' :
+                      'bg-gray-100 text-gray-500'
+                    }`}>
+                      {zone.status === 'active' ? 'Active' : zone.status === 'coming_soon' ? 'Coming Soon' : 'Inactive'}
+                    </span>
                   </div>
                 );
               })}
             </div>
             <div className="text-center mt-8">
-              <Link href="/community-pet-care/zones" className="inline-flex items-center gap-2 text-(--bpa-green) font-semibold hover:underline">
-                View all zones with details <ChevronRight size={16} />
+              <Link
+                href="/community-pet-care/zones"
+                className="inline-flex items-center gap-2 text-(--bpa-green) font-semibold hover:underline"
+              >
+                <MapPin size={16} /> View all zones with details <ChevronRight size={16} />
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* Care Partner Card explanation */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <ShieldCheck size={48} className="text-(--bpa-green) mx-auto mb-6" />
-          <h2 className="text-3xl font-bold text-(--bpa-navy) mb-4">BPA Community Care Partner Card</h2>
-          <p className="text-gray-600 leading-relaxed mb-6 max-w-2xl mx-auto">
-            After a successful contribution, you will receive a digital BPA Community Care Partner Card
-            with a unique QR code. The card is valid for 5 years and serves as your proof of contribution
-            and access to community clinic service benefits.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 mb-8">
-            {['Digital card with QR verification', '5-year validity', 'Community clinic service access', 'Annual care camp invitation'].map((benefit) => (
-              <span key={benefit} className="bg-(--bpa-green-light) text-(--bpa-green) text-sm px-4 py-2 rounded-full font-medium">
-                ✓ {benefit}
-              </span>
-            ))}
-          </div>
-          <Link href="/care-partner-card" className="inline-flex items-center gap-2 text-(--bpa-green) font-semibold hover:underline">
-            Look up your Care Partner Card <ChevronRight size={16} />
-          </Link>
-        </div>
-      </section>
+      {/* 7 — Contributor wall */}
+      <ContributorWallSection contributors={recentContributors} />
 
-      {/* Legal disclaimer */}
+      {/* 8 — Central Diagnostic Center Vision */}
+      <DiagnosticCenterSection services={diagnosticServices} />
+
+      {/* 9 — Future Roadmap */}
+      <RoadmapSection items={roadmapItems} />
+
+      {/* 10 — Where contribution goes */}
+      <AllocationSection />
+
+      {/* 11 — Care Partner Card preview */}
+      <CardPreviewSection />
+
+      {/* 12 — Transparency strip */}
+      <TransparencyStrip />
+
+      {/* 13 — Legal disclaimer */}
       <section className="py-8 bg-amber-50 border-t border-amber-200">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex gap-3 items-start">
@@ -222,17 +254,39 @@ export default async function CommunityPetCarePage() {
         </div>
       </section>
 
-      {/* Quick links */}
-      <section className="py-16 bg-gray-50">
+      {/* 11 — Quick links */}
+      <section className="py-16 bg-gray-50 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid sm:grid-cols-3 gap-6">
             {[
-              { href: '/transparency', label: 'Transparency Reports', desc: 'View fund collection and spending reports.' },
-              { href: '/pet-census-2026', label: 'Pet Census 2026', desc: 'Register your pet and help us plan clinic capacity.' },
-              { href: '/community-pet-care/faq', label: 'Frequently Asked Questions', desc: 'Answers to common questions about contribution and the Care Partner Card.' },
-            ].map(({ href, label, desc }) => (
-              <Link key={href} href={href} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-(--bpa-green) hover:shadow-sm transition-all group">
-                <h3 className="font-semibold text-(--bpa-navy) group-hover:text-(--bpa-green) transition-colors mb-2">{label}</h3>
+              {
+                href: '/transparency',
+                label: 'Transparency Reports',
+                labelBn: 'স্বচ্ছতা প্রতিবেদন',
+                desc: 'View fund collection and spending reports.',
+              },
+              {
+                href: '/pet-census-2026',
+                label: 'Pet Census 2026',
+                labelBn: 'পেট সেন্সাস ২০২৬',
+                desc: 'Register your pet and help us plan clinic capacity.',
+              },
+              {
+                href: '/community-pet-care/faq',
+                label: 'Frequently Asked Questions',
+                labelBn: 'সাধারণ জিজ্ঞাসা',
+                desc: 'Answers to common questions about contribution and the Care Partner Card.',
+              },
+            ].map(({ href, label, labelBn, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="block p-6 bg-white rounded-2xl border border-gray-200 hover:border-(--bpa-green) hover:shadow-sm transition-all group"
+              >
+                <h3 className="font-bold text-(--bpa-navy) group-hover:text-(--bpa-green) transition-colors mb-0.5">
+                  {label}
+                </h3>
+                <p className="text-xs text-gray-400 mb-2">{labelBn}</p>
                 <p className="text-sm text-gray-500">{desc}</p>
               </Link>
             ))}

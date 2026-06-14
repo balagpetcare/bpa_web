@@ -11,8 +11,8 @@ interface TransparencyReportPageProps {
   params: Promise<{ slug: string }>;
 }
 
-function money(value: string | number) {
-  return `৳${Number(value).toLocaleString('en-BD', { maximumFractionDigits: 0 })}`;
+function money(value: string | number | null | undefined) {
+  return `৳${Number(value ?? 0).toLocaleString('en-BD', { maximumFractionDigits: 0 })}`;
 }
 
 function fmtDate(value: string) {

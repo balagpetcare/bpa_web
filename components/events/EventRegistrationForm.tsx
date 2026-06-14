@@ -68,7 +68,7 @@ export default function EventRegistrationForm({
       if (result.requiresPayment && result.redirectUrl) {
         assertSafePaymentUrl(result.redirectUrl);
         setRedirecting(true);
-        window.location.href = result.redirectUrl;
+        window.location.assign(result.redirectUrl);
         return;
       }
 

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/Breadcrumb';
@@ -12,10 +11,11 @@ import { getCampaignBySlug, getCampaignsList } from '@/lib/api/campaigns';
 import {
   CalendarDays, MapPin, Users, Syringe, Clock, BanknoteIcon,
   ArrowLeft, CheckCircle, AlertCircle, Info, ChevronDown, Building2,
-  Activity, ShieldCheck, CreditCard, Smartphone, Banknote, FlaskConical,
+  Activity, ShieldCheck, CreditCard, FlaskConical,
   Target, TrendingUp,
 } from 'lucide-react';
 import type { CampaignSession, CampaignStatus, CampaignType, CampaignService } from '@/types/bpa.types';
+import { formatMoney, toDisplayString, getCampaignMediaUrl, getCampaignRoleUrl } from '@/lib/utils/format';
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -37,9 +37,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const campaign = await getCampaignBySlug(slug, { next: { revalidate: 60 } });
     if (!campaign) return {};
     const desc = campaign.description ?? `Register your pets for ${campaign.title} by Bangladesh Pet Association.`;
-    const heroImg = campaign.media?.find(m => m.role === 'hero')?.mediaFile.url
-      ?? campaign.media?.find(m => m.role === 'thumbnail')?.mediaFile.url
-      ?? campaign.coverImage?.url;
+    const heroImg = getCampaignMediaUrl(campaign, 'hero');
     return {
       title: `${campaign.title} | BPA Vaccination Campaigns`,
       description: desc,
@@ -60,6 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   } catch { return {}; }
 }
+
 
 // ─── Utilities ──────────────────────────────────────────────────────────────
 
@@ -174,7 +173,7 @@ function SessionCard({ session, campaignSlug, canRegister }: { session: Campaign
         <div className="shrink-0">
           {canRegister && !isFull && session.isActive ? (
             <Link href={`/campaigns/${campaignSlug}/register?session=${session.id}`}
-              className="inline-flex items-center justify-center bg-(--bpa-green) text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-(--bpa-green-dark) transition-colors">
+              className="inline-flex items-center justify-center bg-(--bpa-green) text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-(--color-bpa-green-dark) transition-colors">
               Register
             </Link>
           ) : canRegister ? (
@@ -227,6 +226,11 @@ function VaccineCard({ service }: { service: CampaignService }) {
             {service.isRequired && (
               <span className="text-[10px] font-bold bg-(--bpa-green-light) text-(--bpa-green) px-2 py-0.5 rounded-full">Included</span>
             )}
+            {service.priceBdt != null && service.priceBdt > 0 && (
+              <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full ml-auto">
+                {formatMoney(service.priceBdt)}
+              </span>
+            )}
           </div>
           {service.description && (
             <p className="text-xs text-gray-500 mb-2">{service.description}</p>
@@ -274,8 +278,17 @@ export default async function CampaignDetailPage({ params }: PageProps) {
 
   const statusInfo = STATUS_INFO[campaign.status] ?? STATUS_INFO.published;
   const canRegister = campaign.status === 'registration_open';
-  const isFree = Number(campaign.basePriceBdt) === 0;
+  const campaignFeeBdt = Number(campaign.basePriceBdt ?? 0);
+  const isFree = campaignFeeBdt === 0;
   const now = new Date();
+
+  // Pricing summary from service prices
+  const servicesTotalBdt = campaign.services.reduce((sum, s) => sum + (s.priceBdt ?? 0), 0);
+  const discountAmountBdt = servicesTotalBdt - campaignFeeBdt;
+  const discountPercent = servicesTotalBdt > 0 && discountAmountBdt > 0
+    ? Math.round((discountAmountBdt / servicesTotalBdt) * 100)
+    : 0;
+  const hasPricingDiscount = servicesTotalBdt > 0 && discountAmountBdt > 0;
 
   // ── Computed stats ────────────────────────────────────────────────
   const totalCapacity  = campaign.sessions.reduce((a, s) => a + s.capacity, 0);
@@ -328,16 +341,16 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   ].filter(Boolean) as Array<{ label: string; date: string; done: boolean }>;
 
   // ── Media by role ─────────────────────────────────────────────────
-  const heroMedia     = campaign.media?.find(m => m.role === 'hero') ?? null;
-  const thumbMedia    = campaign.media?.find(m => m.role === 'thumbnail') ?? null;
-  const mobileMedia   = campaign.media?.find(m => m.role === 'mobile_banner') ?? null;
-  const galleryMedia  = (campaign.media ?? []).filter(m => m.role === 'gallery').sort((a, b) => a.sortOrder - b.sortOrder);
+  const galleryMedia  = (campaign.media ?? []).filter((m: any) => m.role === 'gallery').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
 
-  // Hero image: prefer dedicated hero, fall back to cover image
-  const heroBannerUrl  = heroMedia?.mediaFile.url ?? campaign.coverImage?.url ?? null;
-  const heroBannerAlt  = heroMedia?.altText ?? campaign.coverImage?.altText ?? campaign.title;
-  // SEO image: prefer thumbnail, then hero, then cover
-  const seoImageUrl    = thumbMedia?.mediaFile.url ?? heroBannerUrl;
+  // Banner: media-array-only — no coverImage fallback so blank box never renders
+  const heroBannerUrl   = getCampaignRoleUrl(campaign, 'hero')
+    || getCampaignRoleUrl(campaign, 'thumbnail')
+    || getCampaignRoleUrl(campaign, 'mobile_banner');
+  const heroBannerAlt   = campaign.title;
+  const mobileBannerUrl = getCampaignRoleUrl(campaign, 'mobile_banner');
+  // SEO: can use coverImage as fallback
+  const seoImageUrl     = getCampaignMediaUrl(campaign, 'thumbnail');
 
   // ── Venue list for JSON-LD ────────────────────────────────────────
   const venuesForSchema = Object.values(coverageMap).map(({ venues }) => ({
@@ -356,111 +369,124 @@ export default async function CampaignDetailPage({ params }: PageProps) {
         slug={slug}
         coverImageUrl={seoImageUrl}
         isFree={isFree}
-        basePriceBdt={campaign.basePriceBdt}
+        basePriceBdt={toDisplayString(campaign.basePriceBdt)}
         venues={venuesForSchema}
       />
       <BreadcrumbJsonLd items={[{ name: 'Campaigns', url: '/campaigns' }, { name: campaign.title, url: `/campaigns/${slug}` }]} />
 
-      {/* ─── HERO BANNER ────────────────────────────────────────── */}
-      <section className="relative min-h-[420px] md:min-h-[500px] bg-(--bpa-navy) overflow-hidden flex items-end">
-        {/* Desktop hero */}
-        {heroBannerUrl ? (
-          <Image
-            src={heroBannerUrl}
-            alt={heroBannerAlt}
-            fill priority
-            sizes="100vw"
-            className={`object-cover opacity-40 ${mobileMedia ? 'hidden md:block' : ''}`}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-(--bpa-green)/40 to-(--bpa-navy)" />
+      {/* ─── FULL BACKGROUND CAMPAIGN HERO ─────────────────────── */}
+      <section className="relative isolate overflow-hidden bg-(--bpa-navy) text-white">
+        {/* Background Image */}
+        {heroBannerUrl && (
+          <picture className="absolute inset-0 -z-20">
+            {mobileBannerUrl && <source media="(max-width: 767px)" srcSet={mobileBannerUrl} />}
+            <img
+              src={heroBannerUrl}
+              alt={campaign.title}
+              className="h-full w-full object-cover"
+            />
+          </picture>
         )}
-        {/* Mobile banner (separate image on small screens) */}
-        {mobileMedia && (
-          <Image
-            src={mobileMedia.mediaFile.url}
-            alt={mobileMedia.altText ?? campaign.title}
-            fill priority
-            sizes="100vw"
-            className="object-cover opacity-40 md:hidden"
-          />
-        )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-(--bpa-navy) via-(--bpa-navy)/60 to-transparent" />
 
-        <div className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-24">
-          {/* Breadcrumb */}
-          <div className="mb-4 [&_a]:text-white/60 [&_a:hover]:text-white">
-            <Breadcrumb items={[{ label: 'Campaigns', href: '/campaigns' }, { label: campaign.title }]} />
-          </div>
+        {/* Overlays for readability */}
+        <div className="absolute inset-0 bg-slate-950/60 -z-10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-slate-950/25 -z-10" />
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-slate-950/80 to-transparent -z-10" />
 
-          <div className="flex flex-col md:flex-row md:items-end gap-6">
-            <div className="flex-1">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24 lg:px-8 lg:py-28 min-h-[560px] md:min-h-[620px] flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12 items-center w-full">
+            {/* Left side: Info */}
+            <div className="max-w-3xl">
+              {/* Breadcrumb */}
+              <div className="mb-6 [&_a]:text-white/70 [&_a:hover]:text-white">
+                <Breadcrumb items={[{ label: 'Campaigns', href: '/campaigns' }, { label: campaign.title }]} />
+              </div>
+
               {/* Badges */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-full border ${statusInfo.color}`}>
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-full border shadow-sm ${statusInfo.color}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot} animate-pulse`} />
                   {statusInfo.label}
                 </span>
-                <span className="text-xs font-semibold bg-white/15 text-white px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20">
+                <span className="text-xs font-semibold bg-white/10 text-white/90 px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/15">
                   {TYPE_LABELS[campaign.campaignType] ?? campaign.campaignType}
                 </span>
                 {isFree && (
-                  <span className="text-xs font-bold bg-amber-400 text-amber-900 px-3 py-1.5 rounded-full">Free</span>
+                  <span className="text-xs font-bold bg-amber-400 text-amber-950 px-3.5 py-1.5 rounded-full shadow-sm">Free</span>
                 )}
               </div>
 
-              <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white leading-tight mb-4">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight mb-6">
                 {campaign.title}
               </h1>
 
-              {/* Hero quick stats */}
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-white/70">
-                <span className="flex items-center gap-1.5">
-                  <CalendarDays size={14} className="text-white/50" />
+              {/* Meta row */}
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm md:text-base text-white/80">
+                <span className="flex items-center gap-2">
+                  <CalendarDays size={18} className="text-white/40" />
                   {fmtDateShort(campaign.startDate)} – {fmtDateShort(campaign.endDate)}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <MapPin size={14} className="text-white/50" />
-                  {uniqueVenues.length} venue{uniqueVenues.length !== 1 ? 's' : ''}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Users size={14} className="text-white/50" />
-                  {totalAvailable > 0 ? `${totalAvailable.toLocaleString()} slots available` : 'Fully booked'}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Syringe size={14} className="text-white/50" />
-                  {campaign.services.length} vaccine service{campaign.services.length !== 1 ? 's' : ''}
-                </span>
+                {uniqueVenues.length > 0 && (
+                  <span className="flex items-center gap-2">
+                    <MapPin size={18} className="text-white/40" />
+                    {uniqueVenues.length} venue{uniqueVenues.length !== 1 ? 's' : ''}
+                  </span>
+                )}
+                {totalCapacity > 0 && (
+                  <span className="flex items-center gap-2">
+                    <Users size={18} className="text-white/40" />
+                    {totalAvailable > 0 ? `${totalAvailable.toLocaleString()} slots left` : 'Fully booked'}
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Hero CTA — desktop */}
-            <div className="hidden md:flex flex-col items-end gap-3 shrink-0">
-              <div className="text-right">
-                <p className="text-white/60 text-xs mb-0.5">Registration fee</p>
-                <p className="text-white font-extrabold text-2xl">{isFree ? 'Free' : `৳${Number(campaign.basePriceBdt).toLocaleString()}`}</p>
-                {!isFree && <p className="text-white/50 text-xs">per pet</p>}
+            {/* Right side: Price & CTA Card */}
+            <div className="lg:block">
+              <div className="rounded-2xl border border-white/15 bg-white/10 p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+                <div className="mb-6">
+                  <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Registration fee</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-white font-extrabold text-4xl">{isFree ? 'Free' : formatMoney(campaignFeeBdt)}</p>
+                    {!isFree && <p className="text-white/50 text-sm font-medium">/ pet</p>}
+                  </div>
+                  {hasPricingDiscount && (
+                    <div className="mt-2 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-white/50 line-through">{formatMoney(servicesTotalBdt)}</span>
+                      <span className="text-xs font-bold bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full">{discountPercent}% OFF</span>
+                    </div>
+                  )}
+                </div>
+
+                {canRegister && totalAvailable > 0 ? (
+                  <Link href={`/campaigns/${slug}/register`}
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-950 transition-all active:scale-[0.98]">
+                    Book Now
+                  </Link>
+                ) : canRegister && totalAvailable === 0 ? (
+                  <Link href={`/campaigns/${slug}/waitlist`}
+                    className="mt-5 inline-flex w-full items-center justify-center rounded-xl border-2 border-white/30 bg-white/5 px-6 py-4 font-bold text-white hover:bg-white/10 transition-all">
+                    Join Waitlist
+                  </Link>
+                ) : (
+                  <div className="w-full text-center py-4 bg-white/5 rounded-xl border border-white/10 text-white/50 font-bold text-sm">
+                    Registration {campaign.status.replace('_', ' ')}
+                  </div>
+                )}
+
+                {totalAvailable > 0 && totalAvailable <= 50 && (
+                  <p className="mt-4 text-center text-xs font-bold text-amber-400 animate-pulse">
+                    Hurry! Only {totalAvailable} slots remaining
+                  </p>
+                )}
               </div>
-              {canRegister && totalAvailable > 0 && (
-                <Link href={`/campaigns/${slug}/register`}
-                  className="inline-flex items-center gap-2 bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white font-bold px-7 py-3.5 rounded-xl transition-colors shadow-lg text-sm">
-                  Register Your Pet(s)
-                </Link>
-              )}
-              {canRegister && totalAvailable === 0 && (
-                <Link href={`/campaigns/${slug}/waitlist`}
-                  className="inline-flex items-center gap-2 border-2 border-white/40 text-white font-bold px-7 py-3.5 rounded-xl hover:border-white/70 transition-colors text-sm">
-                  Join Waitlist
-                </Link>
-              )}
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── MAIN CONTENT + SIDEBAR ──────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-24 lg:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
         <div className="grid lg:grid-cols-3 gap-10">
 
           {/* ── MAIN COLUMN ─────────────────────────────────────── */}
@@ -476,7 +502,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                 <dl className="grid sm:grid-cols-2 gap-4 mt-8">
                   {[
                     { icon: <CalendarDays size={16} />, label: 'Campaign Period', value: `${fmtDateShort(campaign.startDate)} – ${fmtDateShort(campaign.endDate)}` },
-                    { icon: <BanknoteIcon size={16} />, label: 'Fee Per Pet', value: isFree ? 'Free' : `৳${campaign.basePriceBdt}` },
+                    { icon: <BanknoteIcon size={16} />, label: 'Fee Per Pet', value: isFree ? 'Free' : formatMoney(campaignFeeBdt) },
                     { icon: <Users size={16} />, label: 'Max Pets / Booking', value: `${campaign.maxPetsPerBooking} pets` },
                     { icon: <Syringe size={16} />, label: 'Services Included', value: `${campaign.services.length} vaccine service${campaign.services.length !== 1 ? 's' : ''}` },
                     { icon: <MapPin size={16} />, label: 'Venues', value: `${uniqueVenues.length} location${uniqueVenues.length !== 1 ? 's' : ''}` },
@@ -629,7 +655,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                       'Enter your name and mobile number (no account needed)',
                       'Add your pet(s) with basic details',
                       'Review your booking and confirm',
-                      `${isFree ? 'Receive instant confirmation' : 'Complete payment via SSLCommerz or bank transfer'}`,
+                      `${isFree ? 'Receive instant confirmation' : 'Complete online payment to confirm your booking'}`,
                       'Get QR code — show it at the venue on campaign day',
                     ].map((step, i) => (
                       <li key={i} className="flex items-start gap-3 text-sm text-gray-600">
@@ -708,13 +734,32 @@ export default async function CampaignDetailPage({ params }: PageProps) {
               <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                 <div className="bg-(--bpa-navy) px-6 py-4">
                   <p className="text-white/60 text-xs font-medium mb-1">Registration Fee</p>
-                  <p className="text-white font-extrabold text-3xl">
-                    {isFree ? 'Free' : `৳${Number(campaign.basePriceBdt).toLocaleString()}`}
-                  </p>
-                  {!isFree && <p className="text-white/50 text-xs">per pet</p>}
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-white font-extrabold text-3xl">
+                      {isFree ? 'Free' : formatMoney(campaignFeeBdt)}
+                    </p>
+                    {!isFree && <p className="text-white/50 text-xs">/ pet</p>}
+                  </div>
+                  {hasPricingDiscount && (
+                    <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-white/40 line-through">{formatMoney(servicesTotalBdt)}</span>
+                      <span className="text-xs font-bold bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full">{discountPercent}% OFF</span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-5 space-y-3">
+                  {/* Savings callout */}
+                  {hasPricingDiscount && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 text-center">
+                      <p className="text-xs font-semibold text-amber-800">
+                        You save <span className="font-extrabold">{formatMoney(discountAmountBdt)}</span> per pet
+                      </p>
+                      <p className="text-[10px] text-amber-600 mt-0.5">
+                        Services worth {formatMoney(servicesTotalBdt)} included
+                      </p>
+                    </div>
+                  )}
                   {/* Status */}
                   <div className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-lg border w-full justify-center ${statusInfo.color}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${statusInfo.dot}`} />
@@ -744,12 +789,12 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                   {/* CTA buttons */}
                   {canRegister && totalAvailable > 0 ? (
                     <Link href={`/campaigns/${slug}/register`}
-                      className="block w-full text-center bg-(--bpa-green) text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-(--bpa-green-dark) transition-colors shadow-sm">
-                      Register Your Pet(s)
+                      className="block w-full text-center bg-(--bpa-green) text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-(--color-bpa-green-dark) transition-colors shadow-sm">
+                      Book Now
                     </Link>
                   ) : canRegister && totalAvailable === 0 ? (
                     <Link href={`/campaigns/${slug}/waitlist`}
-                      className="block w-full text-center bg-(--bpa-green) text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-(--bpa-green-dark) transition-colors">
+                      className="block w-full text-center border-2 border-(--bpa-green) text-(--bpa-green) font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-emerald-50 transition-colors">
                       Join Waitlist
                     </Link>
                   ) : campaign.status === 'registration_closed' ? (
@@ -783,36 +828,15 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                 <div className="bg-white rounded-2xl border border-gray-200 p-5">
                   <h3 className="font-bold text-(--bpa-navy) text-sm mb-3 flex items-center gap-2">
                     <CreditCard size={15} className="text-(--bpa-green)" />
-                    Accepted Payments
+                    Online Payment Acceptable
                   </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center shrink-0">
-                        <CreditCard size={14} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-(--bpa-navy)">SSLCommerz</p>
-                        <p className="text-[10px] text-gray-400">Card, Net Banking, MFS</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center shrink-0">
-                        <Smartphone size={14} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-(--bpa-navy)">Mobile Banking</p>
-                        <p className="text-[10px] text-gray-400">bKash · Nagad (via SSLCommerz)</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 bg-gray-200 rounded-lg flex items-center justify-center shrink-0">
-                        <Banknote size={14} className="text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-(--bpa-navy)">Manual Payment</p>
-                        <p className="text-[10px] text-gray-400">Bank transfer · Cash at venue</p>
-                      </div>
-                    </div>
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Online payment is available for this campaign. Pay securely via card, mobile banking,
+                    or internet banking during registration.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2 text-xs text-(--bpa-green)">
+                    <CheckCircle size={13} />
+                    <span className="font-semibold">Secured payment</span>
                   </div>
                 </div>
               )}
@@ -871,7 +895,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
         slug={slug}
         status={campaign.status}
         isFree={isFree}
-        basePriceBdt={campaign.basePriceBdt}
+        basePriceBdt={toDisplayString(campaign.basePriceBdt)}
         nextSessionDate={nextSessionLabel}
         totalAvailable={totalAvailable}
       />

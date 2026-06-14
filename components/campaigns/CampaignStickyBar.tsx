@@ -35,7 +35,7 @@ export default function CampaignStickyBar({ slug, status, isFree, basePriceBdt, 
           {canRegister && totalAvailable > 0 ? (
             <Link
               href={`/campaigns/${slug}/register`}
-              className="shrink-0 bg-(--bpa-green) text-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-(--bpa-green-light) transition-colors active:scale-95"
+              className="shrink-0 bg-(--bpa-green) text-white font-bold text-sm px-5 py-3 rounded-xl hover:bg-(--color-bpa-green-dark) transition-colors active:scale-95"
             >
               Register Now
             </Link>

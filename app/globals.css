@@ -28,3 +28,46 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* ─── Care Partner Card shimmer ──────────────────────────────── */
+@keyframes card-sheen {
+  0%   { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(500%)  skewX(-20deg); }
+}
+
+.care-card-premium {
+  position: relative;
+  overflow: hidden;
+}
+.care-card-premium::after {
+  content: '';
+  position: absolute;
+  top: -10%;
+  left: 0;
+  width: 35%;
+  height: 120%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 40%,
+    rgba(255, 255, 255, 0.10) 50%,
+    rgba(255, 255, 255, 0.04) 60%,
+    transparent 100%
+  );
+  animation: card-sheen 5s ease-in-out 1s infinite;
+  pointer-events: none;
+}
+
+/* ─── Ping dot for live status ───────────────────────────────── */
+@keyframes soft-ping {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+.ping-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  opacity: 0.75;
+}

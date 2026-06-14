@@ -20,8 +20,17 @@ function calc(target: Date): TimeLeft {
   };
 }
 
-function Pad({ n }: { n: number }) {
-  return <span>{String(n).padStart(2, '0')}</span>;
+function Unit({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="flex flex-col items-center min-w-[44px]">
+      <div className="w-full bg-amber-100 border border-amber-200 rounded-lg px-2 py-1.5 text-center">
+        <span className="text-lg font-extrabold text-amber-900 tabular-nums leading-none">
+          {String(value).padStart(2, '0')}
+        </span>
+      </div>
+      <span className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide mt-1">{label}</span>
+    </div>
+  );
 }
 
 interface Props {
@@ -30,29 +39,46 @@ interface Props {
 }
 
 export default function CountdownTimer({ targetIso, label }: Props) {
-  const target = new Date(targetIso);
   const [time, setTime] = useState<TimeLeft | null>(null);
 
   useEffect(() => {
-    setTime(calc(target));
-    const id = setInterval(() => setTime(calc(target)), 1000);
+    const target = new Date(targetIso);
+    const update = () => setTime(calc(target));
+    update();
+    const id = setInterval(update, 1000);
     return () => clearInterval(id);
   }, [targetIso]);
 
   if (!time) return null;
 
-  const expired = target.getTime() <= Date.now() && time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0;
-  if (expired) return null;
+  const isExpired =
+    time.days === 0 && time.hours === 0 && time.minutes === 0 && time.seconds === 0;
+
+  if (isExpired) {
+    return (
+      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+        <div className="flex items-center gap-2 text-orange-700">
+          <Clock size={15} className="shrink-0" />
+          <span className="text-sm font-bold">Registration Closed</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-      <Clock size={16} className="text-amber-600 shrink-0" />
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-amber-700 font-medium">{label}</span>
-        <span className="font-bold text-amber-900 tabular-nums">
-          {time.days > 0 && <><Pad n={time.days} />d </>}
-          <Pad n={time.hours} />h <Pad n={time.minutes} />m <Pad n={time.seconds} />s
-        </span>
+    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+      <div className="flex items-center gap-1.5 mb-3">
+        <Clock size={14} className="text-amber-600 shrink-0" />
+        <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">{label}</span>
+      </div>
+      <div className="flex items-start gap-2">
+        <Unit value={time.days} label="Days" />
+        <span className="text-amber-400 font-bold text-lg mt-1">:</span>
+        <Unit value={time.hours} label="Hours" />
+        <span className="text-amber-400 font-bold text-lg mt-1">:</span>
+        <Unit value={time.minutes} label="Min" />
+        <span className="text-amber-400 font-bold text-lg mt-1">:</span>
+        <Unit value={time.seconds} label="Sec" />
       </div>
     </div>
   );

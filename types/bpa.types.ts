@@ -167,6 +167,7 @@ export interface CampaignService {
   description: string | null;
   isRequired: boolean;
   sortOrder: number;
+  priceBdt: number | null;
   vaccineCatalog: {
     id: string;
     name: string;
@@ -188,10 +189,14 @@ export interface CampaignListItem {
   endDate: string;
   registrationOpenAt: string | null;
   registrationCloseAt: string | null;
-  basePriceBdt: string;
+  /** Prisma Decimal serialized as string — always use safeNumber() before arithmetic */
+  basePriceBdt: string | number;
   maxPetsPerBooking: number;
   isFeatured: boolean;
   coverImage: { id: string; url: string; altText: string | null } | null;
+  media?: Pick<CampaignMedia, 'id' | 'role' | 'sortOrder' | 'altText' | 'mediaFile'>[];
+  /** Lightweight service prices included in list for discount calculation */
+  services?: { id: string; priceBdt: number | null }[];
   _count: { sessions: number; services: number };
   createdAt: string;
   updatedAt: string;
@@ -206,6 +211,7 @@ export interface CampaignDetail extends CampaignListItem {
   sessions: CampaignSession[];
   services: CampaignService[];
   media: CampaignMedia[];
+  allowedPetTypes: string[];
   termsAndConditions: string | null;
   faq: CampaignFaqItem[] | null;
 }
@@ -480,6 +486,8 @@ export interface CareFundOverview {
   totalContributors: number;
   totalAmountBdt: string;
   totalActiveCards: number;
+  totalRaised?: number | string | null;
+  totalPetsSupported?: number | null;
   zones: {
     id: string;
     name: string;
@@ -554,6 +562,78 @@ export interface CareCardVerifyResult {
   disclaimer: string;
 }
 
+// ─── Public Contributors & Impact ────────────────────────────────
+
+export interface PublicContributor {
+  id: string;
+  contributionNumber: string;
+  displayName: string;
+  isAnonymous: boolean;
+  zoneName: string;
+  createdAt: string;
+}
+
+export interface PublicImpactStats {
+  strayAnimalsSupported: number;
+  animalsVaccinated: number;
+  rescueCasesSupported: number;
+  feedingProgramsRun: number;
+  lowIncomeFamiliesAssisted: number;
+  totalContributors: number;
+  totalZones: number;
+}
+
+// ─── Enterprise Content (Phase 4) ────────────────────────────────
+
+export interface CarePartnerBenefit {
+  id: string;
+  titleEn: string;
+  titleBn: string;
+  descriptionEn: string | null;
+  descriptionBn: string | null;
+  icon: string | null;
+  category: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface SocialImpactProgram {
+  id: string;
+  titleEn: string;
+  titleBn: string;
+  descriptionEn: string | null;
+  descriptionBn: string | null;
+  icon: string | null;
+  impactType: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface RoadmapItem {
+  id: string;
+  titleEn: string;
+  titleBn: string;
+  descriptionEn: string | null;
+  descriptionBn: string | null;
+  phase: string | null;
+  year: number | null;
+  status: 'PLANNED' | 'IN_PROGRESS' | 'LIVE';
+  sortOrder: number;
+  isActive: boolean;
+}
+
+export interface DiagnosticCenterService {
+  id: string;
+  titleEn: string;
+  titleBn: string;
+  descriptionEn: string | null;
+  descriptionBn: string | null;
+  icon: string | null;
+  category: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
 export interface PetCensusPayload {
   ownerName: string;
   mobile: string;
@@ -572,6 +652,20 @@ export interface PetCensusPayload {
   consent: true;
   source: 'PET_CENSUS_2026';
   sourceRoute?: string;
+}
+
+export interface PetCensusCampaign {
+  active: boolean;
+  id?: string;
+  title: string;
+  description?: string | null;
+  status: 'draft' | 'published' | 'registration_open' | 'registration_closed' | 'completed' | 'cancelled';
+  registrationStartAt?: string;
+  registrationEndAt?: string;
+  countdownTargetAt?: string | null;
+  targetSubmissions: number;
+  currentSubmissions: number;
+  settings?: Record<string, unknown> | null;
 }
 
 export interface TransparencyReportPublic {

@@ -9,6 +9,12 @@ interface Props {
 
 export default function CommunityCareFundSection({ overview, zones }: Props) {
   const displayZones = zones.slice(0, 8);
+  const safeOverview = {
+    totalActiveCards: overview?.totalActiveCards ?? 0,
+    totalContributors: overview?.totalContributors ?? 0,
+    totalRaised: Number(overview?.totalRaised ?? overview?.totalAmountBdt ?? 0),
+    totalPetsSupported: overview?.totalPetsSupported ?? 0,
+  };
 
   return (
     <section className="py-20 bg-(--bpa-navy) text-white">
@@ -24,28 +30,30 @@ export default function CommunityCareFundSection({ overview, zones }: Props) {
         </div>
 
         {/* Stats */}
-        {overview && (
-          <div className="grid grid-cols-3 gap-6 text-center mb-12 max-w-2xl mx-auto">
+        <div className="grid grid-cols-3 gap-6 text-center mb-12 max-w-2xl mx-auto">
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">{overview.totalContributors.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-(--bpa-green)">{safeOverview.totalContributors.toLocaleString()}</div>
               <div className="text-xs text-gray-400 mt-1">Contributors</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">৳{Number(overview.totalAmountBdt).toLocaleString()}</div>
+              <div className="text-3xl font-bold text-(--bpa-green)">৳{safeOverview.totalRaised.toLocaleString()}</div>
               <div className="text-xs text-gray-400 mt-1">Collected</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">{overview.totalActiveCards.toLocaleString()}</div>
+              <div className="text-3xl font-bold text-(--bpa-green)">{safeOverview.totalActiveCards.toLocaleString()}</div>
               <div className="text-xs text-gray-400 mt-1">Care Cards</div>
             </div>
-          </div>
-        )}
+        </div>
 
         {/* Zone progress grid */}
         {displayZones.length > 0 && (
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             {displayZones.map((zone) => {
-              const pct = Math.min(Math.round((zone.currentContributors / zone.targetContributors) * 100), 100);
+              const currentContributors = zone.currentContributors ?? 0;
+              const targetContributors = zone.targetContributors ?? 0;
+              const pct = targetContributors > 0
+                ? Math.min(Math.round((currentContributors / targetContributors) * 100), 100)
+                : 0;
               return (
                 <div key={zone.id} className="bg-white/10 rounded-xl p-4 hover:bg-white/15 transition-colors">
                   <div className="flex justify-between items-center mb-2">
@@ -56,7 +64,7 @@ export default function CommunityCareFundSection({ overview, zones }: Props) {
                     <div className="bg-(--bpa-green) h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                   <p className="text-xs text-gray-400">
-                    {zone.currentContributors.toLocaleString()} / {zone.targetContributors.toLocaleString()}
+                    {currentContributors.toLocaleString()} / {targetContributors.toLocaleString()}
                   </p>
                 </div>
               );

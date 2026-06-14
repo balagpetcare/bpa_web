@@ -9,7 +9,8 @@ interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement | HT
 }
 
 const FormField = forwardRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, FormFieldProps>(
-  ({ label, error, as: Tag = 'input', rows = 4, children, className = '', id, ...props }, ref) => {
+  ({ label, error, as: Tag = 'input', rows = 4, children, className = '', id, disabled, ...props }, ref) => {
+    const isDisabled = Boolean(disabled);
     const fieldId = id ?? label.toLowerCase().replace(/\s+/g, '-');
     const baseClasses = [
       'block w-full rounded-lg border px-4 py-2.5 text-sm text-(--bpa-green-light) bg-white',
@@ -31,6 +32,7 @@ const FormField = forwardRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelect
             rows={rows}
             ref={ref as React.Ref<HTMLTextAreaElement>}
             className={baseClasses}
+            disabled={isDisabled}
             {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
           />
         ) : Tag === 'select' ? (
@@ -38,6 +40,7 @@ const FormField = forwardRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelect
             id={fieldId}
             ref={ref as React.Ref<HTMLSelectElement>}
             className={baseClasses}
+            disabled={isDisabled}
             {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
           >
             {children}
@@ -47,6 +50,7 @@ const FormField = forwardRef<HTMLInputElement | HTMLTextAreaElement | HTMLSelect
             id={fieldId}
             ref={ref as React.Ref<HTMLInputElement>}
             className={baseClasses}
+            disabled={isDisabled}
             {...(props as React.InputHTMLAttributes<HTMLInputElement>)}
           />
         )}

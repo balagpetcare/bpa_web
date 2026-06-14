@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Info } from 'lucide-react';
@@ -43,20 +43,34 @@ export default function ContributionForm({ defaultZoneId }: Props) {
   const [plans, setPlans] = useState<ContributionPlanPublic[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [redirecting, setRedirecting] = useState(false);
+  const [referenceDataLoading, setReferenceDataLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([getPublicZones(), getPublicPlans()])
       .then(([z, p]) => { setZones(z); setPlans(p); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setReferenceDataLoading(false));
   }, []);
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { zoneId: defaultZoneId ?? '', planId: '' },
+    defaultValues: {
+      contributorName: '',
+      contributorMobile: '',
+      contributorEmail: '',
+      contributorAddress: '',
+      zoneId: defaultZoneId ?? '',
+      planId: '',
+      isAnonymous: false,
+      disclaimerConsent: false as never,
+      hasConsented: false as never,
+    },
   });
 
-  const selectedPlanId = watch('planId');
+  const selectedZoneId = useWatch({ control, name: 'zoneId' });
+  const selectedPlanId = useWatch({ control, name: 'planId' });
   const selectedPlan = plans.find((p) => p.id === selectedPlanId);
+  const isSubmitDisabled = !selectedZoneId || !selectedPlanId || referenceDataLoading || isSubmitting || redirecting;
 
   const onSubmit = async (data: FormValues) => {
     setErrorMsg('');
@@ -72,7 +86,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
       });
       assertSafePaymentUrl(result.paymentUrl);
       setRedirecting(true);
-      window.location.href = result.paymentUrl;
+      window.location.assign(result.paymentUrl);
     } catch (err) {
       setRedirecting(false);
       setErrorMsg(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
@@ -97,21 +111,40 @@ export default function ContributionForm({ defaultZoneId }: Props) {
       {errorMsg && <Alert variant="error" title="Submission failed" message={errorMsg} />}
 
       {/* Zone select */}
-      <FormField label="Zone" required as="select" error={errors.zoneId?.message} {...register('zoneId')}>
+      <FormField
+        label="Zone"
+        required
+        as="select"
+        error={errors.zoneId?.message}
+        disabled={Boolean(referenceDataLoading || isSubmitting || redirecting)}
+        {...register('zoneId')}
+      >
         <option value="">Select your zone</option>
-        {zones.filter((z) => z.status === 'active').map((z) => (
-          <option key={z.id} value={z.id}>
-            {z.name} — {z.city}, {z.district} ({z.currentContributors.toLocaleString()} / {z.targetContributors.toLocaleString()} contributors)
-          </option>
-        ))}
+        {zones.filter((z) => z.status === 'active').map((z) => {
+          const currentContributors = z.currentContributors ?? 0;
+          const targetContributors = z.targetContributors ?? 0;
+
+          return (
+            <option key={z.id} value={z.id}>
+              {z.name} — {z.city}, {z.district} ({currentContributors.toLocaleString()} / {targetContributors.toLocaleString()} contributors)
+            </option>
+          );
+        })}
       </FormField>
 
       {/* Plan select */}
-      <FormField label="Contribution Plan" required as="select" error={errors.planId?.message} {...register('planId')}>
+      <FormField
+        label="Contribution Plan"
+        required
+        as="select"
+        error={errors.planId?.message}
+        disabled={Boolean(referenceDataLoading || isSubmitting || redirecting)}
+        {...register('planId')}
+      >
         <option value="">Select a plan</option>
         {plans.map((p) => (
           <option key={p.id} value={p.id}>
-            {p.title} — ৳{Number(p.amountBdt).toLocaleString()}
+            {p.title} — ৳{Number(p.amountBdt ?? 0).toLocaleString()}
           </option>
         ))}
       </FormField>
@@ -161,7 +194,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
         <div className="bg-green-50 border border-green-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-2">
             <p className="font-semibold text-(--bpa-navy)">{selectedPlan.title}</p>
-            <p className="text-2xl font-bold text-(--bpa-green)">৳{Number(selectedPlan.amountBdt).toLocaleString()}</p>
+            <p className="text-2xl font-bold text-(--bpa-green)">৳{Number(selectedPlan.amountBdt ?? 0).toLocaleString()}</p>
           </div>
           {selectedPlan.benefitsSummaryJson && selectedPlan.benefitsSummaryJson.length > 0 && (
             <ul className="mt-3 space-y-1">
@@ -217,7 +250,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
         size="lg"
         loading={isSubmitting || redirecting}
         className="w-full"
-        disabled={plans.length === 0 || zones.length === 0}
+        disabled={Boolean(isSubmitDisabled)}
       >
         Proceed to Payment
       </Button>
