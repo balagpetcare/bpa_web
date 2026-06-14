@@ -6,7 +6,8 @@ import FaqJsonLd from '@/components/seo/FaqJsonLd';
 import ContactForm from '@/components/forms/ContactForm';
 import { buildMetadata } from '@/lib/seo';
 import { getSeoData } from '@/lib/api/seo';
-import { Mail, Phone, MapPin, Clock } from 'lucide-react';
+import { getPublicSiteSettings, addressLines } from '@/lib/api/site-settings';
+import { Mail, Phone, MapPin, Clock, MessageCircle } from 'lucide-react';
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoData('/contact');
@@ -19,41 +20,78 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 }
 
-const CONTACT_INFO = [
-  {
-    icon: MapPin,
-    label: 'Address',
-    lines: ['House 12, Road 5, Block D', 'Bashundhara R/A', 'Dhaka 1229, Bangladesh'],
-  },
-  {
-    icon: Phone,
-    label: 'Phone',
-    lines: ['+880 2-8989-9999', '+880 1700-000000'],
-  },
-  {
-    icon: Mail,
-    label: 'Email',
-    lines: ['info@bpa.org.bd', 'support@bpa.org.bd'],
-  },
-  {
-    icon: Clock,
-    label: 'Office Hours',
-    lines: ['Sunday – Thursday: 9 AM – 6 PM', 'Friday – Saturday: Closed'],
-  },
-];
+export default async function ContactPage() {
+  const settings = await getPublicSiteSettings({
+    next: { revalidate: 60 },
+  } as RequestInit).catch(() => null);
 
-const FAQ = [
-  { question: 'How quickly will you respond to my message?', answer: 'We aim to respond to all messages within 1–2 business days. For urgent matters, please call our office directly.' },
-  { question: 'I found an injured stray animal — who do I call?', answer: 'Please call our emergency animal rescue line at +880 1700-000000. We are available for rescue calls 7 days a week.' },
-  { question: 'How can I report animal cruelty?', answer: 'You can report animal cruelty by calling our hotline or emailing report@bpa.org.bd. All reports are treated confidentially.' },
-  { question: 'Can I visit the BPA office?', answer: 'Yes — our office is open Sunday to Thursday, 9 AM to 6 PM. We recommend calling ahead to schedule a visit.' },
-];
+  // ── Build dynamic contact info sections ───────────────────────────
+  const addrLines = settings ? addressLines(settings) : [];
 
-export default function ContactPage() {
+  type Section = { icon: React.ElementType; label: string; lines: string[]; isLinks?: boolean };
+  const sections: Section[] = [];
+
+  if (addrLines.length > 0) {
+    sections.push({ icon: MapPin, label: 'Address', lines: addrLines });
+  }
+
+  const phoneLines: string[] = [];
+  if (settings?.officialPhone) phoneLines.push(settings.officialPhone);
+  if (settings?.emergencyPhone) phoneLines.push(`${settings.emergencyPhone} (Emergency)`);
+  if (settings?.whatsappNumber) phoneLines.push(`${settings.whatsappNumber} (WhatsApp)`);
+  if (phoneLines.length > 0) sections.push({ icon: Phone, label: 'Phone', lines: phoneLines });
+
+  const emailLines: string[] = [];
+  if (settings?.generalEmail) emailLines.push(settings.generalEmail);
+  if (settings?.supportEmail && settings.supportEmail !== settings.generalEmail) emailLines.push(settings.supportEmail);
+  if (emailLines.length > 0) sections.push({ icon: Mail, label: 'Email', lines: emailLines, isLinks: true });
+
+  if (settings?.officeHours) {
+    sections.push({ icon: Clock, label: 'Office Hours', lines: [settings.officeHours] });
+  }
+
+  if (settings?.whatsappNumber) {
+    sections.push({
+      icon: MessageCircle,
+      label: 'WhatsApp',
+      lines: [`Chat with us at ${settings.whatsappNumber}`],
+    });
+  }
+
+  // ── Dynamic FAQ ───────────────────────────────────────────────────
+  const faq = [
+    {
+      question: 'How quickly will you respond to my message?',
+      answer: 'We aim to respond to all messages within 1–2 business days. For urgent matters, please call our office directly.',
+    },
+    ...(settings?.emergencyPhone
+      ? [{
+          question: 'I found an injured stray animal — who do I call?',
+          answer: `Please call our emergency animal rescue line at ${settings.emergencyPhone}. We are available for rescue calls 7 days a week.`,
+        }]
+      : []),
+    ...(settings?.generalEmail || settings?.supportEmail
+      ? [{
+          question: 'How can I report animal cruelty?',
+          answer: `You can report animal cruelty by calling our hotline${settings.emergencyPhone ? ` at ${settings.emergencyPhone}` : ''} or emailing ${settings.generalEmail ?? settings.supportEmail}. All reports are treated confidentially.`,
+        }]
+      : []),
+    {
+      question: 'Can I visit the BPA office?',
+      answer: settings?.officeHours
+        ? `Yes — our office is open ${settings.officeHours}. We recommend calling ahead to schedule a visit.`
+        : 'Yes — please call ahead to confirm our current office hours before visiting.',
+    },
+  ];
+
+  // ── Map section ───────────────────────────────────────────────────
+  const hasMap = !!(settings?.mapEmbedUrl || settings?.mapLink);
+  const mapAddress = addrLines.join(', ') || null;
+
   return (
     <>
       <BreadcrumbJsonLd items={[{ name: 'Contact Us', url: '/contact' }]} />
-      <FaqJsonLd items={FAQ} />
+      <FaqJsonLd items={faq} />
 
       {/* Page header */}
       <section className="bg-gray-50 border-b border-gray-100 py-12">
@@ -79,19 +117,41 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              {CONTACT_INFO.map(({ icon: Icon, label, lines }) => (
+              {sections.length === 0 && (
+                <p className="text-sm text-gray-400 italic">Contact information will appear here once configured.</p>
+              )}
+
+              {sections.map(({ icon: Icon, label, lines, isLinks }) => (
                 <div key={label} className="flex gap-4">
-                  <div className="w-10 h-10 bg-(--bpa-green) rounded-lg flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-(--bpa-green-light) rounded-lg flex items-center justify-center shrink-0">
                     <Icon size={18} className="text-(--bpa-green)" />
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-                    {lines.map((line) => (
-                      <p key={line} className="text-sm text-(--bpa-green) leading-relaxed">{line}</p>
-                    ))}
+                    {lines.map((line) =>
+                      isLinks ? (
+                        <a key={line} href={`mailto:${line}`} className="block text-sm text-(--bpa-green) hover:underline leading-relaxed">
+                          {line}
+                        </a>
+                      ) : (
+                        <p key={line} className="text-sm text-(--bpa-navy) leading-relaxed">{line}</p>
+                      )
+                    )}
                   </div>
                 </div>
               ))}
+
+              {settings?.mapLink && (
+                <a
+                  href={settings.mapLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-(--bpa-green) hover:underline"
+                >
+                  <MapPin size={14} />
+                  View on Google Maps
+                </a>
+              )}
             </div>
 
             {/* Contact form */}
@@ -105,16 +165,36 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Map placeholder */}
+      {/* Map section */}
       <section className="pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 h-80 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin size={32} className="text-(--bpa-navy) mx-auto mb-3" />
-              <p className="text-sm font-medium text-gray-600">BPA Office — Bashundhara R/A, Dhaka</p>
-              <p className="text-xs text-gray-400 mt-1">Interactive map coming soon</p>
+          {settings?.mapEmbedUrl ? (
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm h-80">
+              <iframe
+                src={settings.mapEmbedUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="BPA Office Location"
+              />
             </div>
-          </div>
+          ) : hasMap ? (
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 h-80 flex items-center justify-center">
+              <div className="text-center">
+                <MapPin size={32} className="text-(--bpa-navy) mx-auto mb-3" />
+                {mapAddress && <p className="text-sm font-medium text-gray-600">{mapAddress}</p>}
+                {settings?.mapLink && (
+                  <a href={settings.mapLink} target="_blank" rel="noopener noreferrer"
+                    className="mt-2 inline-block text-sm text-(--bpa-green) hover:underline">
+                    View on Google Maps →
+                  </a>
+                )}
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -123,10 +203,10 @@ export default function ContactPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <SectionHeader eyebrow="Common Questions" title="FAQ" centered />
           <div className="mt-10 space-y-4">
-            {FAQ.map((faq) => (
-              <div key={faq.question} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-                <h3 className="font-semibold text-(--bpa-navy) mb-2">{faq.question}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{faq.answer}</p>
+            {faq.map((item) => (
+              <div key={item.question} className="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
+                <h3 className="font-semibold text-(--bpa-navy) mb-2">{item.question}</h3>
+                <p className="text-sm text-gray-500 leading-relaxed">{item.answer}</p>
               </div>
             ))}
           </div>

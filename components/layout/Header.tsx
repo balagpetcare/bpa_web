@@ -6,16 +6,22 @@ import { usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import MobileNav from './MobileNav';
 import { NAV_ITEMS } from '@/lib/navigation';
+import { getPublicSiteSettings } from '@/lib/api/site-settings';
 
 export default function Header() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 16);
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  useEffect(() => {
+    getPublicSiteSettings().then(s => setPrimaryLogoUrl(s.primaryLogoUrl));
   }, []);
 
   return (
@@ -29,12 +35,19 @@ export default function Header() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center gap-2 shrink-0">
-              <div className="w-9 h-9 rounded-full bg-(--bpa-green) flex items-center justify-center">
-                <span className="text-white text-sm font-bold">BPA</span>
-              </div>
-              <span className="font-bold text-(--bpa-navy) text-base hidden sm:block leading-tight">
-                Bangladesh<br />Pet Association
-              </span>
+              {primaryLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={primaryLogoUrl} alt="BPA Logo" className="h-9 w-auto object-contain" />
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-full bg-(--bpa-green) flex items-center justify-center">
+                    <span className="text-white text-sm font-bold">BPA</span>
+                  </div>
+                  <span className="font-bold text-(--bpa-navy) text-base hidden sm:block leading-tight">
+                    Bangladesh<br />Pet Association
+                  </span>
+                </>
+              )}
             </Link>
 
             {/* Desktop nav */}
