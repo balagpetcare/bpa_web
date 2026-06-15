@@ -16,14 +16,14 @@ export default function CardPreviewSection() {
         {/* Header */}
         <div className="max-w-2xl mb-16">
           <p className="text-xs font-bold text-(--bpa-green) uppercase tracking-[0.18em] mb-4">
-            Care Partner Card
+            BPA Community Care Partner Card
           </p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-(--bpa-navy) leading-tight mb-4">
-            Your digital membership<br />card.
+            Your digital card<br />membership.
           </h2>
           <p className="text-base text-gray-500 leading-relaxed">
-            আপনার ডিজিটাল কেয়ার পার্টনার কার্ড —{' '}
-            <span className="text-gray-400">proof of contribution, gateway to benefits.</span>
+            আপনার ডিজিটাল কার্ড সদস্যপদ —{' '}
+            <span className="text-gray-400">proof of card membership, gateway to benefits.</span>
           </p>
         </div>
 

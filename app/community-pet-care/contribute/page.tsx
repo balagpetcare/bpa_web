@@ -1,23 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { buildMetadata } from '@/lib/seo';
 import { getSeoData } from '@/lib/api/seo';
-import ContributionForm from './components/ContributionForm';
 import MembershipPurchaseFlow from './components/MembershipPurchaseFlow';
 
 export const dynamic = 'force-dynamic';
 
 const VALID_TIERS = ['primary', 'premium', 'enterprise'];
+const DEFAULT_TIER = 'primary';
 
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoData('/community-pet-care/contribute').catch(() => null);
   return buildMetadata(
     {
-      title: 'Contribute — Become a BPA Community Care Partner',
+      title: 'Get Your BPA Community Care Partner Card',
       description:
-        'Support a 24/7 Community Pet Clinic in your zone and receive your digital BPA Care Partner Card.',
+        'Select your BPA Community Care Partner Card tier and complete registration. Your zone vote counts toward BPA\'s clinic expansion priority.',
       canonical: '/community-pet-care/contribute',
-      keywords: ['contribute', 'care partner', 'community pet clinic', 'BPA', 'membership'],
+      keywords: ['care partner card', 'community pet clinic', 'BPA', 'membership'],
     },
     seo,
   );
@@ -29,15 +30,15 @@ interface Props {
 
 export default async function ContributePage({ searchParams }: Props) {
   const { zone, tier } = await searchParams;
-  const membershipTier = tier && VALID_TIERS.includes(tier) ? tier : null;
+  const membershipTier = tier && VALID_TIERS.includes(tier) ? tier : DEFAULT_TIER;
 
-  const heading = membershipTier
-    ? 'Join Community Care Membership'
-    : 'Become a Care Partner';
+  // Legacy contribution mode is hidden; redirect to membership by default.
+  // Old /community-pet-care/contribute?tier=xxx route pattern continues to work.
+  // Legacy ?tier-less mode now defaults to Primary tier purchase.
 
-  const subtext = membershipTier
-    ? 'Complete your membership registration below.'
-    : 'Make your ৳3,000 contribution to support a 24/7 Community Pet Clinic in your zone and receive your digital BPA Care Partner Card.';
+  const heading = 'Get Your BPA Community Care Partner Card';
+
+  const subtext = 'Select your preferred clinic zone and complete registration. Your zone vote counts toward BPA\'s clinic expansion priority.';
 
   return (
     <>
@@ -48,7 +49,7 @@ export default async function ContributePage({ searchParams }: Props) {
             <span>/</span>
             <Link href="/community-pet-care" className="hover:text-(--bpa-green)">Community Pet Care</Link>
             <span>/</span>
-            <span className="text-gray-600">Contribute</span>
+            <span className="text-gray-600">Get Card</span>
           </nav>
           <h1 className="text-4xl font-bold text-(--bpa-navy)">{heading}</h1>
           <p className="mt-3 text-lg text-gray-500 max-w-xl">{subtext}</p>
@@ -58,36 +59,17 @@ export default async function ContributePage({ searchParams }: Props) {
       <div className="py-16">
         <div className="max-w-2xl mx-auto px-4">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-            {membershipTier ? (
-              <MembershipPurchaseFlow tierSlug={membershipTier} />
-            ) : (
-              <ContributionForm defaultZoneId={zone} />
-            )}
+            <MembershipPurchaseFlow tierSlug={membershipTier} />
           </div>
 
           <div className="mt-6 text-center text-sm text-gray-400 space-y-2">
-            {membershipTier ? (
-              <>
-                <p>
-                  After activation, check your membership at{' '}
-                  <Link href="/community-pet-care/membership" className="text-(--bpa-green) hover:underline">membership page</Link>.
-                </p>
-                <p>
-                  <Link href="/community-pet-care" className="text-(--bpa-green) hover:underline">← Back to Community Pet Care</Link>
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  After payment, your Care Partner Card will be issued automatically.
-                  You can look it up at{' '}
-                  <Link href="/care-partner-card" className="text-(--bpa-green) hover:underline">care-partner-card</Link>.
-                </p>
-                <p>
-                  <Link href="/community-pet-care/faq" className="text-(--bpa-green) hover:underline">Have questions? Read the FAQ →</Link>
-                </p>
-              </>
-            )}
+            <p>
+              After activation, check your membership at{' '}
+              <Link href="/community-pet-care/membership" className="text-(--bpa-green) hover:underline">membership page</Link>.
+            </p>
+            <p>
+              <Link href="/community-pet-care" className="text-(--bpa-green) hover:underline">← Back to Community Pet Care</Link>
+            </p>
           </div>
         </div>
       </div>

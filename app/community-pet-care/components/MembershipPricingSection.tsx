@@ -87,12 +87,12 @@ export default function MembershipPricingSection({ overview }: Props) {
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-3">Membership</p>
+            <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-3">BPA Community Care Partner Card</p>
             <h2 className="text-3xl sm:text-4xl font-bold text-(--bpa-navy) mb-2">
-              Community Care Partnership
+              Choose Your Card Tier
             </h2>
             <p className="text-gray-500 text-lg">
-              Choose a membership tier and unlock exclusive benefits for you and your pets.
+              Select a tier and unlock exclusive benefits for you and your pets.
             </p>
           </div>
 
@@ -143,7 +143,7 @@ export default function MembershipPricingSection({ overview }: Props) {
                       </span>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      {tier.validityMonths === 12 ? 'per year' : `per ${tier.validityMonths} months`}
+                      {tier.validityMonths >= 60 ? 'per 5 years' : tier.validityMonths === 12 ? 'per year' : `per ${tier.validityMonths} months`}
                     </p>
                   </div>
 
@@ -256,7 +256,7 @@ export default function MembershipPricingSection({ overview }: Props) {
               href="/community-pet-care/contribute"
               className="inline-flex items-center gap-1 bg-(--bpa-green) text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
             >
-              Become a Member <ChevronRight size={16} />
+              Get Your BPA Community Care Partner Card <ChevronRight size={16} />
             </Link>
           </div>
         </div>

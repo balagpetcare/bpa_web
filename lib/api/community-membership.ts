@@ -115,6 +115,8 @@ export interface MembershipOverview {
     priceAfterOffer: string;
     offerBannerEn: string | null;
     offerBannerBn: string | null;
+    legalDisclaimer: string | null;
+    cardValidityLabel: string | null;
     isOfferActive: boolean;
     offerRemainingSeconds: number;
   } | null;
@@ -249,13 +251,20 @@ export interface PurchaseStatusResponse {
 export interface ZoneDemandItem {
   id: string;
   name: string;
+  nameBn: string | null;
   slug: string;
   city: string;
   district: string;
   status: string;
+  clinicStatus: string | null;
+  targetMembers: number | null;
+  priorityOrder: number | null;
   paidPurchases: number;
   totalPurchases: number;
+  activeCards: number;
+  totalRevenueBdt: number;
   demandScore: number;
+  progressPercent: number | null;
   rank: number;
 }
 

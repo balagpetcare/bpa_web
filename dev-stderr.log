@@ -1,0 +1,121 @@
+⚠ Turbopack's filesystem cache has been deleted because we previously detected an internal error in Turbopack. Builds or page loads may be slower as a result.
+(node:12732) [DEP0205] DeprecationWarning: `module.register()` is deprecated. Use `module.registerHooks()` instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+      <RedirectBoundary>
+        <RedirectErrorBoundary router={{...}}>
+          <InnerLayoutRouter url="/community..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+            <SegmentViewNode type="page" pagePath="community-...">
+              <SegmentTrieNode>
+              <ContributePage>
+                <section>
+                <div className="py-16">
+                  <div className="max-w-2xl ...">
+                    <div className="bg-white r...">
+                      <ContributionForm>
+                        <form onSubmit={function} noValidate={true} className="space-y-6">
+                          <_c label="Zone" required={true} as="select" error={undefined} disabled={true} name="zoneId" ...>
+                            <div className="flex flex-...">
+                              <label>
+                              <select
+                                id="zone"
+                                ref={function ref}
+                                className={"block w-full rounded-lg border px-4 py-2.5 text-sm text-(--bpa-green-ligh..."}
++                               disabled={true}
+-                               disabled={null}
+                                required={true}
+                                name="zoneId"
+                                onChange={function onChange}
+                                onBlur={function onChange}
+                              >
+                          <_c label="Contributi..." required={true} as="select" error={undefined} disabled={true} ...>
+                            <div className="flex flex-...">
+                              <label>
+                              <select
+                                id="contribution-plan"
+                                ref={function ref}
+                                className={"block w-full rounded-lg border px-4 py-2.5 text-sm text-(--bpa-green-ligh..."}
++                               disabled={true}
+-                               disabled={null}
+                                required={true}
+                                name="planId"
+                                onChange={function onChange}
+                                onBlur={function onChange}
+                              >
+                          ...
+                    ...
+            ...
+          ...
+ 
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+      <RedirectBoundary>
+        <RedirectErrorBoundary router={{...}}>
+          <InnerLayoutRouter url="/community..." tree={[...]} params={{}} cacheNode={{rsc:{...}, ...}} ...>
+            <SegmentViewNode type="page" pagePath="community-...">
+              <SegmentTrieNode>
+              <ContributePage>
+                <section>
+                <div className="py-16">
+                  <div className="max-w-2xl ...">
+                    <div className="bg-white r...">
+                      <ContributionForm>
+                        <form onSubmit={function} noValidate={true} className="space-y-6">
+                          <_c label="Zone" required={true} as="select" error={undefined} disabled={true} name="zoneId" ...>
+                            <div className="flex flex-...">
+                              <label>
+                              <select
+                                id="zone"
+                                ref={function ref}
+                                className={"block w-full rounded-lg border px-4 py-2.5 text-sm text-(--bpa-green-ligh..."}
++                               disabled={true}
+-                               disabled={null}
+                                required={true}
+                                name="zoneId"
+                                onChange={function onChange}
+                                onBlur={function onChange}
+                              >
+                          <_c label="Contributi..." required={true} as="select" error={undefined} disabled={true} ...>
+                            <div className="flex flex-...">
+                              <label>
+                              <select
+                                id="contribution-plan"
+                                ref={function ref}
+                                className={"block w-full rounded-lg border px-4 py-2.5 text-sm text-(--bpa-green-ligh..."}
++                               disabled={true}
+-                               disabled={null}
+                                required={true}
+                                name="planId"
+                                onChange={function onChange}
+                                onBlur={function onChange}
+                              >
+                          ...
+                    ...
+            ...
+          ...
+ 

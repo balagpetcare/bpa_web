@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { getContributionByNumber } from '@/lib/api/contributions';
 import type { ContributionStatusPublic } from '@/types/bpa.types';
+import ClinicPriorityRanking from './ClinicPriorityRanking';
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   paid: { label: 'Paid', color: 'text-green-700 bg-green-100' },
@@ -160,11 +161,13 @@ export default function CarePartnerCardPage() {
 
           <div className="mt-8 text-center text-sm text-gray-400">
             <Link href="/community-pet-care/contribute" className="text-(--bpa-green) hover:underline">
-              Haven&apos;t contributed yet? Contribute ৳3,000 →
+              Haven&apos;t gotten your card yet? Get your BPA Community Care Partner Card →
             </Link>
           </div>
         </div>
       </div>
+
+      <ClinicPriorityRanking />
     </>
   );
 }

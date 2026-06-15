@@ -34,13 +34,13 @@ export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoData('/community-pet-care').catch(() => null);
   return buildMetadata(
     {
-      title: 'Community Pet Care — BPA Community Pet Clinic & Care Partner Programme',
+      title: 'BPA Community Care Partner Card — Community Pet Clinic Programme',
       description:
-        'Support 8 initial 24/7 Community Pet Clinics in Dhaka. Contribute ৳3,000 to become a BPA Care Partner and receive your digital Care Partner Card.',
+        'Get your BPA Community Care Partner Card and support 8 Community Pet Clinics in Dhaka. 5-year card membership with service discounts and priority access.',
       canonical: '/community-pet-care',
       keywords: [
         'community pet care',
-        'care partner',
+        'care partner card',
         'BPA',
         'pet clinic Dhaka',
         'community contribution',
@@ -140,7 +140,7 @@ export default async function CommunityPetCarePage() {
                   href="/community-pet-care/contribute"
                   className="inline-flex items-center gap-2 bg-(--bpa-green) text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
                 >
-                  Become a Care Partner <ChevronRight size={16} />
+                  Become a Card Member <ChevronRight size={16} />
                 </Link>
                 <Link
                   href="/community-pet-care/membership/upgrade"

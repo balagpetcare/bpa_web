@@ -76,15 +76,15 @@ export default function BenefitsSection({ benefits }: Props) {
         {/* Header */}
         <div className="max-w-2xl mb-16">
           <p className="text-xs font-bold text-(--bpa-green) uppercase tracking-[0.18em] mb-4">
-            Care Partner Benefits
+            Card Benefits
           </p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-(--bpa-navy) leading-tight mb-4">
-            What you unlock as a<br />Care Partner.
+            What you unlock with a<br />BPA Community Care Partner Card.
           </h2>
           <p className="text-base text-gray-500 leading-relaxed">
-            কেয়ার পার্টনার হিসেবে আপনি যা পাবেন —{' '}
+            আপনার বেনিফিট যা পাবেন —{' '}
             <span className="text-gray-400">
-              Your ৳3,000 contribution opens 5 years of benefits across BPA&apos;s growing care network.
+              Your 5-year card membership unlocks service discounts, priority access, and more across BPA&apos;s growing care network.
             </span>
           </p>
         </div>
@@ -133,13 +133,13 @@ export default function BenefitsSection({ benefits }: Props) {
         {/* CTA */}
         <div className="mt-12 pt-10 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
           <p className="text-sm text-gray-400 max-w-lg">
-            All benefits are tied to your digital Care Partner Card and valid for the full 5-year contribution cycle.
+            All benefits are tied to your digital BPA Community Care Partner Card and valid for the full 5-year card membership period.
           </p>
           <Link
             href="/community-pet-care/contribute"
             className="inline-flex items-center gap-2 bg-(--bpa-green) text-white px-7 py-3 rounded-xl font-bold text-sm hover:bg-[#145530] transition-colors shrink-0"
           >
-            Become a Care Partner
+            Get Your Card
           </Link>
         </div>
       </div>

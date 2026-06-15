@@ -455,6 +455,7 @@ export interface FooterConfig {
 export interface CommunityZonePublic {
   id: string;
   name: string;
+  nameBn?: string | null;
   slug: string;
   description: string | null;
   city: string;
@@ -468,6 +469,16 @@ export interface CommunityZonePublic {
   clinicPhone: string | null;
   mapEmbedUrl: string | null;
   status: 'active' | 'inactive' | 'coming_soon';
+  // Phase 1: clinic expansion fields
+  clinicStatus?: 'planned' | 'priority' | 'in_progress' | 'active' | 'paused' | null;
+  priorityOrder?: number | null;
+  targetMembers?: number | null;
+  expectedLaunchNote?: string | null;
+  publicVisible?: boolean;
+  // Phase 1: computed demand stats from membership purchases
+  paidMemberCount?: number;
+  totalPurchaseCount?: number;
+  rank?: number;
   coverImage: { url: string; altText: string | null } | null;
 }
 

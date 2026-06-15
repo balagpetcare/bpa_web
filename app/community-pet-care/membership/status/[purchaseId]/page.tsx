@@ -118,15 +118,20 @@ export default async function MembershipStatusPage({ params }: Props) {
               </div>
             )}
             {purchase.preferredZone && (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500 flex items-center gap-1">
-                  <MapPin size={13} /> Preferred Zone
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500 flex items-center gap-1">
+                    <MapPin size={13} /> Preferred Zone
+                  </p>
+                  <p className="font-semibold text-(--bpa-navy)">
+                    {purchase.preferredZone.name}
+                    <span className="text-xs text-gray-400 font-normal ml-1">({purchase.preferredZone.city})</span>
+                  </p>
+                </div>
+                <p className="text-xs text-green-600 text-right -mt-2">
+                  Your selected zone has been counted toward BPA&apos;s clinic expansion priority.
                 </p>
-                <p className="font-semibold text-(--bpa-navy)">
-                  {purchase.preferredZone.name}
-                  <span className="text-xs text-gray-400 font-normal ml-1">({purchase.preferredZone.city})</span>
-                </p>
-              </div>
+              </>
             )}
           </div>
 

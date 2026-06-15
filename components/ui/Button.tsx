@@ -25,10 +25,12 @@ const sizeClasses: Record<Size, string> = {
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', loading, disabled, className = '', children, ...props }, ref) => {
+    const isDisabled = Boolean(disabled || loading);
+
     return (
       <button
         ref={ref}
-        disabled={Boolean(disabled || loading)}
+        disabled={isDisabled}
         className={[
           'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors',
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',

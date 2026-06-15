@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Info, CheckCircle, Clock, Copy, Tag, Shield, PawPrint, MapPin } from 'lucide-react';
+import { Info, CheckCircle, Clock, Copy, Tag, Shield, PawPrint, MapPin, AlertTriangle, Building2 } from 'lucide-react';
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
@@ -27,9 +27,10 @@ import type { CommunityZonePublic } from '@/types/bpa.types';
 const BD_PHONE = /^(\+8801|01)[3-9]\d{8}$/;
 
 const LEGAL_DISCLAIMER =
-  'Community Care Membership is a service benefit membership only. ' +
+  'BPA Community Care Partner Card is a service benefit card only. ' +
   'It does not represent ownership, equity, profit-sharing, investment, or financial return. ' +
-  'Service discounts and third-party benefits are subject to availability and partner terms.';
+  'Service discounts and third-party benefits are subject to availability and partner terms. ' +
+  'Clinic zone establishment is subject to sufficient member demand and BPA operational planning.';
 
 function toSafeNumber(value: unknown): number | null {
   if (value === null || value === undefined || value === '') return null;
@@ -51,15 +52,32 @@ function resolveTierBenefits(tier: MembershipTierPublic) {
       const title = titleEn || titleBn || '';
       const description = benefit.descriptionEn ?? benefit.descriptionBn ?? benefit.description ?? null;
       const id = benefit.id ?? benefit.slug ?? `${index}-${title}`;
-      return {
-        id,
-        title,
-        titleEn,
-        titleBn,
-        description,
-      };
+      return { id, title, titleEn, titleBn, description };
     })
     .filter((benefit) => benefit.title.trim().length > 0);
+}
+
+function formatValidity(months: number): string {
+  if (months >= 60 && months % 12 === 0) return `${months / 12}-Year Card Validity`;
+  if (months >= 24 && months % 12 === 0) return `${months / 12}-Year Card Validity`;
+  if (months === 12) return '1-Year Card Validity';
+  return `${months}-Month Card Validity`;
+}
+
+// ─── Clinic status display ────────────────────────────────────────
+
+type ClinicStatus = 'planned' | 'priority' | 'in_progress' | 'active' | 'paused';
+
+const CLINIC_STATUS_MAP: Record<ClinicStatus, { label: string; badge: string }> = {
+  planned:     { label: 'Planned',       badge: 'bg-gray-100 text-gray-600 border border-gray-200' },
+  priority:    { label: 'Priority Zone', badge: 'bg-amber-100 text-amber-700 border border-amber-200' },
+  in_progress: { label: 'In Progress',   badge: 'bg-blue-100 text-blue-700 border border-blue-200' },
+  active:      { label: 'Clinic Active', badge: 'bg-green-100 text-green-700 border border-green-200' },
+  paused:      { label: 'Paused',        badge: 'bg-red-100 text-red-600 border border-red-200' },
+};
+
+function getClinicStatusInfo(status: string | null | undefined) {
+  return CLINIC_STATUS_MAP[(status ?? 'planned') as ClinicStatus] ?? CLINIC_STATUS_MAP.planned;
 }
 
 // ─── Form schema ─────────────────────────────────────────────────
@@ -124,6 +142,9 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
+          <p className="text-xs font-semibold text-(--bpa-green) uppercase tracking-wide mb-1">
+            BPA Community Care Partner Card
+          </p>
           <div className="flex items-center gap-2 mb-1">
             <p className="font-bold text-(--bpa-navy) text-lg">{tier.nameEn}</p>
             {tier.badgeTextEn && (
@@ -138,18 +159,14 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
         </div>
         <div className="text-right shrink-0">
           {isOffer && regularPrice !== null && (
-            <p className="text-xs text-gray-400 line-through">
-              ৳{regularPrice.toLocaleString()}
-            </p>
+            <p className="text-xs text-gray-400 line-through">৳{regularPrice.toLocaleString()}</p>
           )}
           <p className="text-2xl font-bold text-(--bpa-green)">
             {currentPrice !== null ? `৳${currentPrice.toLocaleString()}` : 'Price unavailable'}
           </p>
-          <p className="text-xs text-gray-500">{tier.validityMonths} month membership</p>
+          <p className="text-xs text-gray-500">{formatValidity(tier.validityMonths)}</p>
           {isOffer && (
-            <p className="text-xs text-amber-600 font-medium mt-0.5">
-              Limited time offer
-            </p>
+            <p className="text-xs text-amber-600 font-medium mt-0.5">Limited time offer</p>
           )}
         </div>
       </div>
@@ -159,6 +176,10 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
         <div className="flex items-center gap-1.5 text-xs text-gray-600">
           <PawPrint size={13} className="text-(--bpa-green)" />
           <span>Up to <strong>{tier.petLimitMax} pets</strong></span>
+        </div>
+        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+          <Building2 size={13} className="text-(--bpa-green)" />
+          <span>Preferred clinic/branch priority</span>
         </div>
         {discountLine && (
           <div className="flex items-center gap-1.5 text-xs text-gray-600">
@@ -193,6 +214,100 @@ function TierSummary({ tier }: { tier: MembershipTierPublic }) {
           No benefits are listed for this tier yet.
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Zone card ────────────────────────────────────────────────────
+
+function ZoneCard({
+  zone,
+  isSelected,
+  onSelect,
+}: {
+  zone: CommunityZonePublic;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const paidCount = zone.paidMemberCount ?? 0;
+  const target = zone.targetMembers ?? 0;
+  const pct = target > 0 ? Math.min(100, Math.round((paidCount / target) * 100)) : 0;
+  const clinicInfo = getClinicStatusInfo(zone.clinicStatus);
+  const isTopZone = zone.rank === 1;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`text-left w-full rounded-xl border-2 p-4 transition-all cursor-pointer ${
+        isSelected
+          ? 'border-(--bpa-green) bg-green-50 shadow-md ring-2 ring-(--bpa-green)/20'
+          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+      }`}
+    >
+      {/* Name + status row */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            {isTopZone && (
+              <span className="text-[10px] bg-(--bpa-green) text-white px-1.5 py-0.5 rounded font-bold shrink-0">
+                #1 Priority
+              </span>
+            )}
+            <p className="font-semibold text-(--bpa-navy) text-sm leading-tight">{zone.name}</p>
+          </div>
+          {zone.nameBn && (
+            <p className="text-xs text-gray-400 mt-0.5">{zone.nameBn}</p>
+          )}
+          <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+            <MapPin size={10} className="shrink-0" />
+            {zone.city}, {zone.district}
+          </p>
+        </div>
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {isSelected ? (
+            <CheckCircle size={18} className="text-(--bpa-green)" />
+          ) : null}
+          <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold whitespace-nowrap ${clinicInfo.badge}`}>
+            {clinicInfo.label}
+          </span>
+        </div>
+      </div>
+
+      {/* Member demand */}
+      <div className="mt-2">
+        <div className="flex justify-between text-xs text-gray-500 mb-1">
+          <span className="font-medium text-(--bpa-navy)">{paidCount.toLocaleString()} active member{paidCount !== 1 ? 's' : ''}</span>
+          {target > 0 && <span className="text-gray-400">Goal: {target.toLocaleString()}</span>}
+        </div>
+        {target > 0 ? (
+          <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${isSelected ? 'bg-(--bpa-green)' : 'bg-gray-300'}`}
+              style={{ width: `${Math.max(pct, 2)}%` }}
+            />
+          </div>
+        ) : (
+          <div className="w-full bg-gray-100 rounded-full h-1.5" />
+        )}
+      </div>
+
+      {/* Expected launch note */}
+      {zone.expectedLaunchNote && (
+        <p className="text-[11px] text-gray-400 mt-2 leading-snug">{zone.expectedLaunchNote}</p>
+      )}
+    </button>
+  );
+}
+
+// ─── Zone card skeleton ───────────────────────────────────────────
+
+function ZoneCardSkeleton() {
+  return (
+    <div className="grid sm:grid-cols-2 gap-3">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />
+      ))}
     </div>
   );
 }
@@ -261,7 +376,7 @@ function MfsPaymentScreen({
       {/* Payment details */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-500">Membership</span>
+          <span className="text-sm text-gray-500">Card Tier</span>
           <span className="font-semibold text-(--bpa-navy)">{purchaseResult.tierName}</span>
         </div>
         <div className="flex items-center justify-between">
@@ -343,19 +458,36 @@ function MfsPaymentScreen({
 
 // ─── Submitted screen ─────────────────────────────────────────────
 
-function SubmittedScreen({ purchaseId }: { purchaseId: string }) {
+function SubmittedScreen({
+  purchaseId,
+  zoneName,
+}: {
+  purchaseId: string;
+  zoneName?: string;
+}) {
   return (
     <div className="text-center py-10 space-y-4">
       <Clock className="mx-auto text-(--bpa-green)" size={48} />
       <h3 className="text-xl font-bold text-(--bpa-navy)">Payment Submitted!</h3>
       <p className="text-gray-500 max-w-sm mx-auto">
-        Your payment is under review. We will activate your membership card within 24–48 hours after verification.
+        Your payment is under review. We will activate your BPA Community Care Partner Card within 24–48 hours after verification.
       </p>
+      {zoneName && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-left max-w-sm mx-auto">
+          <div className="flex items-center gap-2 mb-1">
+            <MapPin size={14} className="text-(--bpa-green) shrink-0" />
+            <p className="text-sm font-semibold text-(--bpa-navy)">Preferred Zone: {zoneName}</p>
+          </div>
+          <p className="text-xs text-gray-500">
+            Your selected zone has been counted toward BPA&apos;s clinic expansion priority.
+          </p>
+        </div>
+      )}
       <a
         href={`/community-pet-care/membership/status/${purchaseId}`}
         className="inline-block mt-4 px-6 py-2.5 bg-(--bpa-green) text-white font-semibold rounded-lg hover:opacity-90 transition-opacity"
       >
-        Check Membership Status
+        Check Card Status
       </a>
     </div>
   );
@@ -389,11 +521,16 @@ interface Props {
 export default function MembershipPurchaseFlow({ tierSlug }: Props) {
   const [tier, setTier] = useState<MembershipTierPublic | null>(null);
   const [tierError, setTierError] = useState('');
+  const [mounted, setMounted] = useState(false);
   const [zones, setZones] = useState<CommunityZonePublic[]>([]);
   const [zonesLoading, setZonesLoading] = useState(true);
+  const [zonesError, setZonesError] = useState(false);
   const [step, setStep] = useState<Step>('form');
   const [purchaseResult, setPurchaseResult] = useState<InitiatePurchaseResponse | null>(null);
+  const [selectedZoneName, setSelectedZoneName] = useState<string | undefined>(undefined);
   const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     getTierBySlug(tierSlug)
@@ -416,14 +553,23 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
 
   useEffect(() => {
     getPublicZones()
-      .then((zs) => setZones(zs.filter((z) => z.status === 'active')))
-      .catch(() => setZones([]))
+      .then((zs) => {
+        const active = zs.filter((z) => z.status === 'active');
+        if (active.length === 0) {
+          setZonesError(true);
+        } else {
+          setZones(active);
+        }
+      })
+      .catch(() => setZonesError(true))
       .finally(() => setZonesLoading(false));
   }, []);
 
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -439,10 +585,15 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
     },
   });
 
+  const preferredZoneId = watch('preferredZoneId');
+
   const onSubmit = async (data: FormValues) => {
     setSubmitError('');
     try {
       const petCount = data.petCount ? parseInt(data.petCount, 10) : undefined;
+      const selectedZone = zones.find((z) => z.id === data.preferredZoneId);
+      setSelectedZoneName(selectedZone?.name);
+
       const result = await initiateMembershipPurchase({
         tierSlug,
         memberName: data.memberName,
@@ -450,7 +601,7 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
         memberEmail: data.memberEmail || undefined,
         memberAddress: data.memberAddress || undefined,
         petCount: Number.isFinite(petCount) ? petCount : undefined,
-        preferredZoneId: data.preferredZoneId || undefined,
+        preferredZoneId: data.preferredZoneId,
       });
       setPurchaseResult(result);
       if (result.paymentMode === 'manual' && result.mfs) {
@@ -460,7 +611,6 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
         setStep('redirecting');
         window.location.assign(result.redirectUrl);
       } else {
-        // Fallback: treat as manual if no redirect URL and no mfs block
         setStep('mfs');
       }
     } catch (err) {
@@ -469,6 +619,15 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
   };
 
   const selectedTierPrice = tier ? resolveTierPrice(tier) : null;
+
+  const isSubmitDisabled =
+    !mounted ||
+    !tier ||
+    zonesLoading ||
+    zonesError ||
+    selectedTierPrice === null ||
+    isSubmitting ||
+    !preferredZoneId;
 
   // ── Error states ────────────────────────────────────────────────
 
@@ -491,11 +650,7 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
   if (step === 'redirecting') {
     return (
       <div className="text-center py-16">
-        <svg
-          className="animate-spin h-8 w-8 mx-auto text-(--bpa-green) mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
+        <svg className="animate-spin h-8 w-8 mx-auto text-(--bpa-green) mb-4" fill="none" viewBox="0 0 24 24">
           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
         </svg>
@@ -520,7 +675,7 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
   // ── Submitted screen ─────────────────────────────────────────────
 
   if (step === 'submitted' && purchaseResult) {
-    return <SubmittedScreen purchaseId={purchaseResult.purchaseId} />;
+    return <SubmittedScreen purchaseId={purchaseResult.purchaseId} zoneName={selectedZoneName} />;
   }
 
   // ── Main form ────────────────────────────────────────────────────
@@ -569,56 +724,83 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
           {...register('memberAddress')}
         />
 
-        <div className="grid sm:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Number of Pets
-            </label>
-            <input
-              type="number"
-              min={1}
-              max={50}
-              placeholder={`Max ${tier?.petLimitMax ?? 50}`}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green) focus:border-transparent"
-              {...register('petCount')}
-            />
-            {errors.petCount && (
-              <p className="text-xs text-red-600 mt-1">{errors.petCount.message as string}</p>
-            )}
-            <p className="text-xs text-gray-400 mt-1">
-              {tier ? `Your tier covers up to ${tier.petLimitMax} pets.` : 'Optional — for our records.'}
-            </p>
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">Number of Pets</label>
+          <input
+            type="number"
+            min={1}
+            max={50}
+            placeholder={`Max ${tier?.petLimitMax ?? 50}`}
+            className="w-full sm:w-48 px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green) focus:border-transparent"
+            {...register('petCount')}
+          />
+          {errors.petCount && (
+            <p className="text-xs text-red-600 mt-1">{errors.petCount.message as string}</p>
+          )}
+          <p className="text-xs text-gray-400 mt-1">
+            {tier ? `Your tier covers up to ${tier.petLimitMax} pets.` : 'Optional — for our records.'}
+          </p>
+        </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              <span className="flex items-center gap-1.5">
-                <MapPin size={14} className="text-(--bpa-green)" />
-                Preferred Clinic Zone <span className="text-red-500 ml-0.5">*</span>
-              </span>
-            </label>
-            {zonesLoading ? (
-              <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
-            ) : (
-              <select
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green) focus:border-transparent bg-white"
-                {...register('preferredZoneId')}
-              >
-                <option value="">— Select your preferred zone —</option>
-                {zones.map((z) => (
-                  <option key={z.id} value={z.id}>
-                    {z.name} ({z.city})
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.preferredZoneId && (
-              <p className="text-xs text-red-600 mt-1">{errors.preferredZoneId.message as string}</p>
-            )}
-            <p className="text-xs text-gray-400 mt-1">
-              Your vote helps BPA prioritise which zone gets the first clinic.
-            </p>
+        {/* ── Preferred Clinic Zone section ─────────────────────── */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <MapPin size={16} className="text-blue-600 shrink-0" />
+            <h3 className="font-semibold text-(--bpa-navy) text-sm">
+              Choose Your Preferred Clinic Zone <span className="text-red-500 ml-0.5">*</span>
+            </h3>
           </div>
+          <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+            Select the area where you want BPA to establish a clinic or partner branch earlier.
+            Zones with more active card members receive higher priority in our expansion plan.
+          </p>
+
+          {zonesError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex items-start gap-3">
+              <AlertTriangle size={18} className="text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Could not load clinic zones</p>
+                <p className="text-xs text-red-600 mt-0.5">
+                  Zone data failed to load. Please refresh the page and try again.
+                  You must select a zone to proceed.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-2 text-xs text-red-700 font-semibold underline underline-offset-2 hover:text-red-800"
+                >
+                  Refresh page →
+                </button>
+              </div>
+            </div>
+          ) : zonesLoading ? (
+            <ZoneCardSkeleton />
+          ) : (
+            <div className="grid sm:grid-cols-2 gap-3">
+              {zones.map((z) => (
+                <ZoneCard
+                  key={z.id}
+                  zone={z}
+                  isSelected={preferredZoneId === z.id}
+                  onSelect={() => setValue('preferredZoneId', z.id, { shouldValidate: true })}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Hidden input for react-hook-form validation */}
+          <input type="hidden" {...register('preferredZoneId')} />
+
+          {errors.preferredZoneId && !zonesError && (
+            <p className="text-xs text-red-600 mt-2 flex items-center gap-1">
+              <AlertTriangle size={11} />
+              {errors.preferredZoneId.message as string}
+            </p>
+          )}
+          <p className="text-xs text-gray-400 mt-3">
+            Your vote helps BPA prioritise which zone gets the first clinic or partner branch.
+            This is recorded with your card purchase.
+          </p>
         </div>
 
         {/* Legal disclaimer */}
@@ -649,23 +831,37 @@ export default function MembershipPurchaseFlow({ tierSlug }: Props) {
             {...register('hasConsented')}
           />
           <span className="text-sm text-gray-600 leading-relaxed">
-            I consent to BPA collecting and storing my information to process my membership and issue a card.
+            I consent to BPA collecting and storing my information to process my card membership and issue a Community Care Partner Card.
           </span>
         </label>
         {errors.hasConsented && (
           <p className="text-xs text-red-600 -mt-4">{errors.hasConsented.message}</p>
         )}
 
-        <Button
-          type="submit"
-          size="lg"
-          loading={isSubmitting}
-          className="w-full"
-          disabled={!tier || selectedTierPrice === null || isSubmitting}
-        >
-          Proceed to Payment
-        </Button>
-        {tier && selectedTierPrice === null && (
+        {zonesError && (
+          <Alert
+            variant="error"
+            title="Zone selection required"
+            message="Clinic zone data could not be loaded. Please refresh the page before proceeding."
+          />
+        )}
+
+        {!mounted ? (
+          <Button type="button" size="lg" loading={false} className="w-full" disabled>
+            Loading…
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            size="lg"
+            loading={Boolean(isSubmitting)}
+            className="w-full"
+            disabled={Boolean(isSubmitDisabled)}
+          >
+            Proceed to Payment
+          </Button>
+        )}
+        {mounted && tier && selectedTierPrice === null && (
           <p className="text-xs text-amber-700 text-center">
             Price unavailable for this tier right now. Please try again later.
           </p>

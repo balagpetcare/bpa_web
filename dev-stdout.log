@@ -1,0 +1,29 @@
+
+> landing-web@0.1.0 dev
+> next dev --port 3000
+
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.10.108:3000
+✓ Ready in 399ms
+Creating turbopack project { dir: 'D:\\bpa_main\\bpa_web', testMode: true }
+
+ GET /community-pet-care/contribute?tier=premium 200 in 3.6s (next.js: 3.2s, application-code: 402ms)
+ GET /community-pet-care/contribute 200 in 3.6s (next.js: 3.0s, application-code: 613ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 170ms (next.js: 3ms, application-code: 166ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 108ms (next.js: 4ms, application-code: 104ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 158ms (next.js: 3ms, application-code: 155ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 104ms (next.js: 14ms, application-code: 90ms)
+✓ Compiled in 151ms
+ GET /community-pet-care/contribute?tier=premium 200 in 130ms (next.js: 34ms, application-code: 96ms)
+ GET /community-pet-care/contribute 200 in 46ms (next.js: 3ms, application-code: 42ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 163ms (next.js: 2ms, application-code: 161ms)
+ GET /community-pet-care/contribute 200 in 98ms (next.js: 3ms, application-code: 95ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 98ms (next.js: 2ms, application-code: 96ms)
+ GET / 200 in 584ms (next.js: 383ms, application-code: 201ms)
+ GET / 200 in 594ms (next.js: 2ms, application-code: 592ms)
+ GET /campaigns 200 in 395ms (next.js: 282ms, application-code: 113ms)
+ GET /campaigns 200 in 34ms (next.js: 2ms, application-code: 32ms)
+ GET /community-pet-care 200 in 667ms (next.js: 291ms, application-code: 376ms)
+ GET /community-pet-care/contribute?tier=premium 200 in 50ms (next.js: 2ms, application-code: 48ms)
+ GET /community-pet-care/contribute 200 in 37ms (next.js: 2ms, application-code: 35ms)
