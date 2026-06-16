@@ -3,8 +3,11 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
+import BackToTopButton from '@/components/common/BackToTopButton';
 import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
 import GoogleAnalytics from '@/components/analytics/GoogleAnalytics';
+import GoogleTagManager from '@/components/analytics/GoogleTagManager';
+import AnalyticsPageView from '@/components/analytics/AnalyticsPageView';
 import { BASE_URL, SITE_NAME } from '@/lib/seo';
 import { getPublicSiteSettings } from '@/lib/api/site-settings';
 
@@ -22,6 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getPublicSiteSettings({
     next: { revalidate: 3600 },
   } as RequestInit).catch(() => null);
+
+  // Only included in <head> when the env-var is non-empty.
+  const gscVerification = process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined;
+  const metaDomainVerification = process.env.NEXT_PUBLIC_FACEBOOK_DOMAIN_VERIFICATION || undefined;
 
   return {
     metadataBase: new URL(BASE_URL),
@@ -66,6 +73,12 @@ export async function generateMetadata(): Promise<Metadata> {
       follow: true,
       googleBot: { index: true, follow: true, 'max-image-preview': 'large' },
     },
+    // Google Search Console ownership verification
+    ...(gscVerification ? { verification: { google: gscVerification } } : {}),
+    // Meta / Facebook domain verification
+    ...(metaDomainVerification
+      ? { other: { 'facebook-domain-verification': metaDomainVerification } }
+      : {}),
   };
 }
 
@@ -78,11 +91,18 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-(--bpa-navy)">
+        {/* GTM noscript iframe sits first inside <body> per Google's spec */}
+        <GoogleTagManager />
         <OrganizationJsonLd />
+        {/* GA4 direct snippet — omit NEXT_PUBLIC_GA_ID if GTM fires GA4 to avoid double-counting */}
         <GoogleAnalytics />
+        {/* Meta Pixel is managed via GTM — no direct snippet here */}
+        {/* Fires page_view on every App Router client-side navigation */}
+        <AnalyticsPageView />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
+        <BackToTopButton />
       </body>
     </html>
   );

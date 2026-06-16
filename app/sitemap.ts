@@ -3,6 +3,7 @@ import { BASE_URL } from '@/lib/seo';
 import { getNewsList } from '@/lib/api/news';
 import { getEventsList } from '@/lib/api/events';
 import { getPublicTransparencyReports } from '@/lib/api/community-care';
+import { getCampaignsList } from '@/lib/api/campaigns';
 
 export const revalidate = 3600;
 
@@ -26,6 +27,9 @@ const STATIC_ROUTES = [
   { path: '/pet-census-2026', priority: 0.9, changeFrequency: 'weekly' },
   { path: '/transparency', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/pet-smart-solution', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/campaigns', priority: 0.9, changeFrequency: 'daily' },
+  { path: '/booking-lookup', priority: 0.6, changeFrequency: 'yearly' },
+  { path: '/verify/cert', priority: 0.6, changeFrequency: 'yearly' },
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -35,10 +39,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: r.changeFrequency,
   }));
 
-  const [newsResult, eventsResult, reportsResult] = await Promise.allSettled([
+  const [newsResult, eventsResult, reportsResult, campaignsResult] = await Promise.allSettled([
     getNewsList({ limit: 1000 }),
     getEventsList({ limit: 1000 }),
     getPublicTransparencyReports(),
+    getCampaignsList({ limit: 1000 }),
   ]);
 
   const newsEntries: MetadataRoute.Sitemap =
@@ -71,5 +76,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }))
       : [];
 
-  return [...staticEntries, ...newsEntries, ...eventEntries, ...reportEntries];
+  const campaignEntries: MetadataRoute.Sitemap =
+    campaignsResult.status === 'fulfilled'
+      ? campaignsResult.value.items.map((c) => ({
+          url: `${BASE_URL}/campaigns/${c.slug}`,
+          lastModified: new Date(c.updatedAt),
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        }))
+      : [];
+
+  return [...staticEntries, ...newsEntries, ...eventEntries, ...reportEntries, ...campaignEntries];
 }

@@ -276,11 +276,17 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   }
   if (!campaign) notFound();
 
+  const now = new Date();
   const statusInfo = STATUS_INFO[campaign.status] ?? STATUS_INFO.published;
-  const canRegister = campaign.status === 'registration_open';
+  const regClose = campaign.registrationCloseAt ? new Date(campaign.registrationCloseAt) : null;
+  const regOpen  = campaign.registrationOpenAt  ? new Date(campaign.registrationOpenAt)  : null;
+  const canRegister =
+    campaign.status === 'registration_open' &&
+    (!regOpen  || regOpen  <= now) &&
+    (!regClose || regClose >  now);
+  const isClosed = !canRegister && campaign.status !== 'published';
   const campaignFeeBdt = Number(campaign.basePriceBdt ?? 0);
   const isFree = campaignFeeBdt === 0;
-  const now = new Date();
 
   // Pricing summary from service prices
   const servicesTotalBdt = campaign.services.reduce((sum, s) => sum + (s.priceBdt ?? 0), 0);
@@ -341,7 +347,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   ].filter(Boolean) as Array<{ label: string; date: string; done: boolean }>;
 
   // ── Media by role ─────────────────────────────────────────────────
-  const galleryMedia  = (campaign.media ?? []).filter((m: any) => m.role === 'gallery').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+  const galleryMedia  = (campaign.media ?? []).filter((m) => m.role === 'gallery').sort((a, b) => a.sortOrder - b.sortOrder);
 
   // Banner: media-array-only — no coverImage fallback so blank box never renders
   const heroBannerUrl   = getCampaignRoleUrl(campaign, 'hero')
@@ -459,18 +465,35 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                 </div>
 
                 {canRegister && totalAvailable > 0 ? (
-                  <Link href={`/campaigns/${slug}/register`}
-                    className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-950 transition-all active:scale-[0.98]">
-                    Book Now
-                  </Link>
+                  <>
+                    <Link href={`/campaigns/${slug}/register`}
+                      className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-6 py-3 font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:ring-offset-2 focus:ring-offset-slate-950 transition-all active:scale-[0.98]">
+                      Book Now
+                    </Link>
+                    {campaign.registrationCloseAt && (
+                      <div className="mt-4">
+                        <CountdownTimer targetIso={campaign.registrationCloseAt} label="Registration closes in" dark compact />
+                      </div>
+                    )}
+                  </>
                 ) : canRegister && totalAvailable === 0 ? (
                   <Link href={`/campaigns/${slug}/waitlist`}
                     className="mt-5 inline-flex w-full items-center justify-center rounded-xl border-2 border-white/30 bg-white/5 px-6 py-4 font-bold text-white hover:bg-white/10 transition-all">
                     Join Waitlist
                   </Link>
+                ) : isClosed ? (
+                  <div className="space-y-3 mt-5">
+                    <div className="w-full text-center py-3 bg-white/5 rounded-xl border border-white/10 text-white/60 text-sm font-semibold">
+                      Online registration is closed for this campaign.
+                    </div>
+                    <Link href="/booking-lookup"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/5 px-6 py-3 font-semibold text-white/80 text-sm hover:bg-white/10 transition-all">
+                      Check Booking / Registration
+                    </Link>
+                  </div>
                 ) : (
-                  <div className="w-full text-center py-4 bg-white/5 rounded-xl border border-white/10 text-white/50 font-bold text-sm">
-                    Registration {campaign.status.replace('_', ' ')}
+                  <div className="mt-5 w-full text-center py-4 bg-white/5 rounded-xl border border-white/10 text-white/50 font-bold text-sm">
+                    Registration not yet open
                   </div>
                 )}
 
@@ -797,14 +820,19 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                       className="block w-full text-center border-2 border-(--bpa-green) text-(--bpa-green) font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-emerald-50 transition-colors">
                       Join Waitlist
                     </Link>
-                  ) : campaign.status === 'registration_closed' ? (
-                    <Link href={`/campaigns/${slug}/waitlist`}
-                      className="block w-full text-center bg-orange-500 text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-orange-600 transition-colors">
-                      Join Waitlist
-                    </Link>
                   ) : campaign.status === 'published' ? (
                     <div className="w-full text-center bg-gray-100 text-gray-500 font-semibold text-sm px-4 py-3.5 rounded-xl cursor-not-allowed">
                       Registration Not Yet Open
+                    </div>
+                  ) : isClosed ? (
+                    <div className="space-y-2">
+                      <div className="w-full text-center bg-gray-50 border border-gray-200 text-gray-500 text-sm font-semibold px-4 py-3 rounded-xl">
+                        Online registration is closed.
+                      </div>
+                      <Link href="/booking-lookup"
+                        className="block w-full text-center bg-(--bpa-green) text-white font-bold text-sm px-4 py-3.5 rounded-xl hover:bg-(--color-bpa-green-dark) transition-colors shadow-sm">
+                        Check Booking / Registration
+                      </Link>
                     </div>
                   ) : null}
 
@@ -816,7 +844,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
               </div>
 
               {/* ── COUNTDOWN ─────────────────────────────────── */}
-              {campaign.registrationCloseAt && campaign.status === 'registration_open' && (
+              {campaign.registrationCloseAt && canRegister && (
                 <CountdownTimer targetIso={campaign.registrationCloseAt} label="Registration closes in" />
               )}
               {campaign.registrationOpenAt && campaign.status === 'published' && (

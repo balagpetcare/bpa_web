@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { getCampaignBySlug, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
 import { ApiError } from '@/lib/api';
+import { trackCampaignRegistration } from '@/lib/analytics';
 import { normalizeCampaignPricing, formatMoney } from '@/lib/utils/format';
 import { getPublicSiteSettings, type PublicSiteSettings } from '@/lib/api/site-settings';
 import type { CampaignDetail, CampaignSession, CampaignVenue, GuestPet, PetType, PetGender } from '@/types/bpa.types';
@@ -436,10 +437,12 @@ export default function RegistrationFormWrapper() {
     if (singleLockedType && pets.length > 0) {
       const needsUpdate = pets.some(p => p.petType !== singleLockedType.value);
       if (needsUpdate) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPets(current => current.map(p => ({ ...p, petType: singleLockedType.value })));
       }
       // Clear error if it's a stale "only accepts" message
       if (error.includes('only accepts') && error.includes(singleLockedType.label)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setError('');
       }
     }
@@ -536,6 +539,17 @@ export default function RegistrationFormWrapper() {
         setSubmitting(false);
         return;
       }
+
+      // Fire analytics conversion event before redirect
+      trackCampaignRegistration({
+        campaignId: campaign.id,
+        campaignTitle: campaign.title,
+        bookingNumber: result.registration.bookingNumber,
+        petCount: pets.length,
+        valueBdt: Number(campaign.basePriceBdt) * pets.length,
+        isFree: result.isFree,
+      });
+
       if (!result.isFree && result.paymentUrl) {
         window.location.href = result.paymentUrl;
       } else {
@@ -1003,7 +1017,7 @@ export default function RegistrationFormWrapper() {
               <h2 className="text-base font-bold text-(--bpa-navy) mb-0.5 flex items-center gap-2">
                 <User size={16} className="text-(--bpa-green)" /> Your Information
               </h2>
-              <p className="text-xs text-gray-500 mb-5">No account required. We'll use this to send your confirmation.</p>
+              <p className="text-xs text-gray-500 mb-5">No account required. We&apos;ll use this to send your confirmation.</p>
               <div className="space-y-4">
                 {[
                   { label: 'Full Name', key: 'name', type: 'text', required: true, placeholder: 'e.g. Rahim Uddin' },
@@ -1183,7 +1197,7 @@ export default function RegistrationFormWrapper() {
               </div>
               {!isFree && (
                 <p className="text-xs text-gray-400 text-center mt-3">
-                  You'll be redirected to a secure payment page after confirming.
+                  You&apos;ll be redirected to a secure payment page after confirming.
                 </p>
               )}
             </div>

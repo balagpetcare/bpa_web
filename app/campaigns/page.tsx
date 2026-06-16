@@ -6,7 +6,7 @@ import SectionHeader from '@/components/ui/SectionHeader';
 import CampaignCard from '@/components/campaigns/CampaignCard';
 import CampaignFilters from '@/components/campaigns/CampaignFilters';
 import { getCampaignsList } from '@/lib/api/campaigns';
-import { Syringe, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Syringe, ChevronLeft, ChevronRight, CalendarOff } from 'lucide-react';
 
 export const revalidate = 120;
 
@@ -101,12 +101,36 @@ export default async function CampaignsPage({ searchParams }: PageProps) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {items.length === 0 ? (
             <div className="text-center py-24">
-              <Syringe size={48} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 font-medium text-lg">No campaigns found.</p>
-              {(search || status || campaignType) && (
-                <Link href="/campaigns" className="mt-4 inline-block text-sm text-(--bpa-green) hover:underline">
-                  Clear filters
-                </Link>
+              {(search || status || campaignType) ? (
+                <>
+                  <Syringe size={48} className="mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500 font-medium text-lg">No campaigns match your filters.</p>
+                  <Link href="/campaigns" className="mt-4 inline-block text-sm text-(--bpa-green) hover:underline">
+                    Clear filters
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <CalendarOff size={48} className="mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-700 font-bold text-xl mb-2">No active campaign registration right now</p>
+                  <p className="text-gray-400 text-base max-w-md mx-auto mb-6">
+                    You can still check your existing booking or registration status.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link
+                      href="/booking-lookup"
+                      className="inline-flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold text-sm px-6 py-3 rounded-xl hover:bg-green-600 transition-colors shadow-sm"
+                    >
+                      Check Booking / Registration
+                    </Link>
+                    <Link
+                      href="/verify/cert"
+                      className="inline-flex items-center justify-center gap-2 border border-gray-200 text-gray-600 text-sm font-semibold px-6 py-3 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Verify Certificate
+                    </Link>
+                  </div>
+                </>
               )}
             </div>
           ) : (

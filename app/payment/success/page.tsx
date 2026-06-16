@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
+import PaymentSuccessEvent from '@/components/analytics/PaymentSuccessEvent';
 
 export const metadata: Metadata = { title: 'Payment Successful', robots: { index: false, follow: false } };
 
@@ -13,6 +14,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
+      <PaymentSuccessEvent txn={txn} />
       <div className="max-w-md w-full mx-auto px-4 text-center">
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle size={48} className="text-(--bpa-green)" />

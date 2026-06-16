@@ -8,6 +8,7 @@ import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { submitContactForm } from '@/lib/api/forms';
+import { trackContactSubmit } from '@/lib/analytics';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(120),
@@ -33,6 +34,7 @@ export default function ContactForm() {
     setStatus('submitting');
     try {
       await submitContactForm(data);
+      trackContactSubmit();
       setStatus('success');
       reset();
     } catch (err) {

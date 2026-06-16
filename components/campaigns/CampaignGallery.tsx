@@ -11,7 +11,8 @@ interface Props {
 }
 
 function getUrl(item: CampaignMedia): string {
-  return resolveMediaUrl(item.mediaFile?.url ?? (item as any).url) ?? '';
+  const fallback = (item as CampaignMedia & { url?: string }).url;
+  return resolveMediaUrl(item.mediaFile?.url ?? fallback) ?? '';
 }
 
 export default function CampaignGallery({ items, title }: Props) {

@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { initiateMembershipPayment } from '@/lib/api/forms';
 import { assertSafePaymentUrl } from '@/lib/utils/payment-redirect';
+import { trackMembershipSubmit } from '@/lib/analytics';
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(120),
@@ -44,6 +45,7 @@ export default function MembershipForm() {
     try {
       const result = await initiateMembershipPayment(data);
       assertSafePaymentUrl(result.redirectUrl);
+      trackMembershipSubmit(data.membershipType);
       setRedirecting(true);
       window.location.href = result.redirectUrl;
     } catch (err) {

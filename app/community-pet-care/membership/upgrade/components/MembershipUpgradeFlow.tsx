@@ -552,10 +552,9 @@ export default function MembershipUpgradeFlow({ initialToken }: { initialToken?:
   const [tokenLookupError, setTokenLookupError] = useState('');
 
   // Auto-lookup when a token is passed via URL
+  // Both tokenLookupLoading and tokenLookupError are pre-initialized; no setState in effect body needed
   useEffect(() => {
     if (!initialToken) return;
-    setTokenLookupLoading(true);
-    setTokenLookupError('');
     lookupMembership({ token: initialToken })
       .then((result) => {
         setMembership(result);

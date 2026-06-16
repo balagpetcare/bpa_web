@@ -11,6 +11,7 @@ import Alert from '@/components/ui/Alert';
 import { initiateContribution } from '@/lib/api/contributions';
 import { getPublicZones, getPublicPlans } from '@/lib/api/community-care';
 import { assertSafePaymentUrl } from '@/lib/utils/payment-redirect';
+import { trackContributionSubmit } from '@/lib/analytics';
 import type { CommunityZonePublic, ContributionPlanPublic } from '@/types/bpa.types';
 
 const BD_PHONE = /^(\+8801|01)[3-9]\d{8}$/;
@@ -85,6 +86,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
         isAnonymous: data.isAnonymous ?? false,
       });
       assertSafePaymentUrl(result.paymentUrl);
+      trackContributionSubmit(Number(selectedPlan?.amountBdt ?? 0));
       setRedirecting(true);
       window.location.assign(result.paymentUrl);
     } catch (err) {

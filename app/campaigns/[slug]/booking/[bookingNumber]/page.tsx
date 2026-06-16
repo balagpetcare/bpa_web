@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { CheckCircle, CalendarDays, MapPin, User, Clock, Syringe } from 'lucide-react';
 import QRDisplay from '@/components/campaigns/QRDisplay';
+import BookingSuccessEvent from '@/components/analytics/BookingSuccessEvent';
 import { getBookingByNumber } from '@/lib/api/campaigns';
 import type { CampaignRegistrationStatus } from '@/types/bpa.types';
 
@@ -49,6 +50,12 @@ export default async function BookingConfirmationPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
+      {/* Fires booking_success + CompleteRegistration once on client mount */}
+      <BookingSuccessEvent
+        bookingNumber={registration.bookingNumber}
+        campaignTitle={registration.campaign.title}
+        status={registration.status}
+      />
       <div className="max-w-2xl mx-auto px-4">
         {/* Success header */}
         <div className="text-center mb-8">

@@ -16,12 +16,24 @@ export async function generateMetadata() {
   return buildMetadata({ title: 'Verify Membership Card — BPA' });
 }
 
+interface VerifyResult {
+  valid: boolean;
+  status: string;
+  cardNumber: string | null;
+  memberName: string | null;
+  tierName: string | null;
+  tierNameBn: string | null;
+  petLimit: number | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+}
+
 export default async function MembershipCardVerifyPage({ params }: PageProps) {
   const { token } = await params;
 
-  let result: any;
+  let result: VerifyResult;
   try {
-    const res = await apiFetch<any>(`/public/community-membership/verify?token=${encodeURIComponent(token)}`, { cache: 'no-store' });
+    const res = await apiFetch<VerifyResult>(`/public/community-membership/verify?token=${encodeURIComponent(token)}`, { cache: 'no-store' });
     result = res.data;
   } catch {
     result = { valid: false, status: 'not_found', cardNumber: null, memberName: null, tierName: null, tierNameBn: null, petLimit: null, issuedAt: null, expiresAt: null };
