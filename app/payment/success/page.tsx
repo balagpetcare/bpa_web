@@ -17,7 +17,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   const { txn, booking } = normalizePaymentParams(raw);
 
   const pdfUrl = booking
-    ? `${API_URL}/api/v1/public/campaign-registrations/booking/${encodeURIComponent(booking)}/slip.pdf`
+    ? `${API_URL}/api/v1/public/bookings/${encodeURIComponent(booking)}/validation-slip.pdf`
     : null;
 
   return (
@@ -28,7 +28,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           <AutoDownloadFile
             url={pdfUrl}
             filename={`BPA-Booking-Slip-${booking}.pdf`}
-            storageKey={`bpa_booking_slip_downloaded_${booking}`}
+            storageKey={`bpa_validation_slip_downloaded_${booking}`}
             delayMs={700}
           />
         )}
@@ -64,10 +64,10 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
         {pdfUrl && (
           <div className="mb-5">
             <p className="text-xs text-gray-400 mb-2 text-center">
-              Your booking slip download should start automatically. If it does not, tap the button below.
+              Your validation slip download should start automatically. If it does not, tap the button below.
             </p>
             <p className="text-xs text-gray-400 mb-3 text-center">
-              আপনার বুকিং স্লিপ স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে। না হলে নিচের বাটনে চাপ দিন।
+              আপনার ভ্যালিডেশন স্লিপ স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে। না হলে নিচের বাটনে চাপ দিন।
             </p>
             <a
               href={pdfUrl}
@@ -77,7 +77,7 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
               className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
             >
               <Download size={16} />
-              Download Booking Slip PDF
+              Download Validation Slip PDF
             </a>
           </div>
         )}
