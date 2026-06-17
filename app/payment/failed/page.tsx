@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { XCircle, AlertCircle, Download } from 'lucide-react';
+import { XCircle, AlertCircle, Download, Phone, Mail, Search } from 'lucide-react';
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
 import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 import { getValidationSlipUrl } from '@/lib/utils/api-url';
@@ -18,26 +18,184 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+// ─── Contact block — shared between both views ────────────────────
+
+function ContactBlock({ urgent }: { urgent?: boolean }) {
+  return (
+    <div className={`rounded-xl p-5 text-left mb-5 ${urgent ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
+      <p className={`font-bold mb-1 ${urgent ? 'text-red-900' : 'text-yellow-900'}`}>
+        সহায়তা প্রয়োজন? / Need help?
+      </p>
+      <p className={`text-sm mb-3 ${urgent ? 'text-red-800' : 'text-yellow-800'}`}>
+        {urgent
+          ? 'আপনার পেমেন্ট কেটে গেলে অনুগ্রহ করে আবার পেমেন্ট করবেন না। বুকিং রেফারেন্সসহ যোগাযোগ করুন।'
+          : 'If you believe a payment was deducted, please contact us with your booking reference.'}
+      </p>
+      <div className={`space-y-2 text-sm ${urgent ? 'text-red-900' : 'text-yellow-900'}`}>
+        <a
+          href="mailto:info@bpa.org.bd"
+          className="flex items-center gap-2 font-medium hover:underline"
+        >
+          <Mail size={14} />
+          info@bpa.org.bd
+        </a>
+        <a
+          href="tel:01575008300"
+          className="flex items-center gap-2 font-medium hover:underline"
+        >
+          <Phone size={14} />
+          01575008300
+        </a>
+        <a
+          href="tel:01701022274"
+          className="flex items-center gap-2 font-medium hover:underline"
+        >
+          <Phone size={14} />
+          01701022274
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// ─── Missing-txn / payment-under-review view ──────────────────────
+
+function PaymentUnderReviewView({
+  slipRef,
+  displayRef,
+}: {
+  slipRef: string | null;
+  displayRef: string | null;
+}) {
+  const slipUrl = slipRef ? getValidationSlipUrl(slipRef) : null;
+
+  return (
+    <section className="min-h-[60vh] flex items-center justify-center py-20">
+      <div className="max-w-md w-full mx-auto px-4 text-center">
+
+        <div className="w-20 h-20 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <AlertCircle size={48} className="text-amber-500" />
+        </div>
+
+        <h1 className="text-3xl font-bold text-(--bpa-navy) mb-2">
+          Payment Under Review
+        </h1>
+        <p className="text-sm font-semibold text-amber-600 mb-4">
+          Manual Payment Verification Required
+        </p>
+
+        {/* Bilingual warning — do not pay again */}
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5 text-left">
+          <p className="text-sm font-bold text-red-800 mb-1">
+            ⚠ আপনার পেমেন্ট কেটে গেলে অনুগ্রহ করে আবার পেমেন্ট করবেন না।
+          </p>
+          <p className="text-sm font-bold text-red-800">
+            ⚠ If your payment was deducted, please do not pay again.
+          </p>
+        </div>
+
+        <p className="text-gray-500 text-sm leading-relaxed mb-5">
+          আপনার বুকিং রেফারেন্সসহ BPA সাপোর্টে যোগাযোগ করুন অথবা ডাউনলোড করা স্লিপটি ভ্যাকসিনেশন ভেন্যুতে নিয়ে আসুন।
+          <br />
+          <span className="text-gray-400">
+            Download your review slip and contact BPA support, or bring the slip to the vaccination venue. BPA will manually verify your payment.
+          </span>
+        </p>
+
+        {/* Reference display */}
+        {displayRef && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-5 py-4 mb-5 text-left">
+            <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">
+              Reference
+            </p>
+            <p className="font-mono font-extrabold text-(--bpa-navy) text-xl tracking-wider">
+              {displayRef}
+            </p>
+          </div>
+        )}
+
+        {/* What happens next */}
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-sm text-blue-800 mb-5 text-left">
+          <p className="font-bold mb-2">What happens next?</p>
+          <ul className="space-y-1 text-blue-700 text-xs list-disc list-inside">
+            <li>BPA will check the payment with the gateway and bank.</li>
+            <li>If payment is confirmed, vaccination will proceed.</li>
+            <li>If payment was not received, you can pay at the venue.</li>
+            <li>Bring this slip or your reference number to the venue.</li>
+          </ul>
+        </div>
+
+        {/* Primary CTA — Download slip */}
+        {slipUrl ? (
+          <div className="mb-4">
+            <a
+              href={slipUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-amber-500 text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+            >
+              <Download size={16} />
+              Download Payment Review Slip
+            </a>
+            <p className="text-xs text-gray-400 mt-2">
+              এই স্লিপটি ভ্যাকসিনেশন ভেন্যুতে দেখান।
+            </p>
+          </div>
+        ) : (
+          /* No ref — show booking lookup CTA */
+          <Link
+            href="/campaigns"
+            className="flex items-center justify-center gap-2 w-full bg-(--bpa-navy) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm mb-4"
+          >
+            <Search size={16} />
+            Find My Booking
+          </Link>
+        )}
+
+        <ContactBlock urgent />
+
+        {/* Secondary actions */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <a
+            href="mailto:info@bpa.org.bd"
+            className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-6 py-3 text-sm bg-amber-100 text-amber-900 hover:bg-amber-200"
+          >
+            <Mail size={15} />
+            Contact BPA Support
+          </a>
+          <Link
+            href="/"
+            className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-6 py-3 text-sm border-2 border-gray-300 text-gray-600 hover:bg-gray-50"
+          >
+            Return to Home
+          </Link>
+        </div>
+
+      </div>
+    </section>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────
+
 export default async function PaymentFailedPage({ searchParams }: Props) {
   const raw = await searchParams;
   const { txn, ref, reason, booking } = normalizePaymentParams(raw);
 
-  const displayRef = txn ?? ref;
+  const displayRef = booking ?? txn ?? ref;
   const isMissingTxn = reason === 'missing_txn';
-  const hasAnyRef = !!displayRef;
-  const canVisitCenter = reason === 'payment_failed' || reason === 'cancelled' || isMissingTxn;
 
-  let message: string;
-  if (isMissingTxn && hasAnyRef) {
-    message = 'We received your payment attempt but could not confirm the transaction. Please contact support with your reference number below.';
-  } else if (isMissingTxn) {
-    message = 'We could not identify your payment transaction. If a payment was deducted, please contact BPA support immediately.';
-  } else {
-    message = REASON_MESSAGES[reason ?? ''] ?? 'The payment was not completed. No charge has been made to your account.';
+  // For missing_txn: show the review UI — any available ref can resolve the slip
+  if (isMissingTxn) {
+    const slipRef = booking ?? ref ?? txn;
+    return <PaymentUnderReviewView slipRef={slipRef} displayRef={displayRef} />;
   }
 
-  const isUnknownOutcome = isMissingTxn || reason === 'verification_failed';
-
+  // ── Normal failure/cancellation UI ───────────────────────────────
+  const isUnknownOutcome = reason === 'verification_failed';
+  const canVisitCenter = reason === 'payment_failed' || reason === 'cancelled';
+  const message = REASON_MESSAGES[reason ?? ''] ?? 'The payment was not completed. No charge has been made to your account.';
   const pdfUrl = booking ? getValidationSlipUrl(booking) : null;
 
   return (
@@ -82,12 +240,10 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 mb-5 text-left">
             <p className="font-bold mb-1">Your booking is still saved</p>
             <p className="text-emerald-700 mb-2">
-              Your booking has been received. If online payment was unavailable or you missed the payment step,
-              you can still visit our vaccination center with this booking reference and complete payment at the center.
+              Your booking has been received. You can still visit our vaccination center with this booking reference and complete payment at the center.
             </p>
             <p className="text-emerald-600 text-xs">
-              আপনার বুকিং গ্রহণ করা হয়েছে। অনলাইন পেমেন্ট সম্পন্ন না হলেও আপনি এই বুকিং রেফারেন্স নিয়ে
-              আমাদের ভ্যাকসিনেশন সেন্টারে এসে সরাসরি পেমেন্ট করে সেবা নিতে পারবেন।
+              আপনার বুকিং গ্রহণ করা হয়েছে। এই বুকিং রেফারেন্স নিয়ে আমাদের ভ্যাকসিনেশন সেন্টারে এসে সরাসরি পেমেন্ট করে সেবা নিতে পারবেন।
             </p>
           </div>
         )}
@@ -110,17 +266,7 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
           </div>
         )}
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-6 text-left">
-          <p className="font-semibold mb-1">Need help?</p>
-          <p className="text-yellow-700">
-            If you believe a payment was deducted, please contact us at{' '}
-            <a href="mailto:info@bpa.org.bd" className="underline font-medium">info@bpa.org.bd</a>
-            {displayRef && (
-              <> with reference <span className="font-mono font-bold">{displayRef}</span></>
-            )}
-            .
-          </p>
-        </div>
+        <ContactBlock />
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {booking && isUnknownOutcome ? (
@@ -145,6 +291,7 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
             Return to Home
           </Link>
         </div>
+
       </div>
     </section>
   );
