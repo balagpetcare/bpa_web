@@ -1022,10 +1022,10 @@ export default function RegistrationFormWrapper() {
               <p className="text-xs text-gray-500 mb-5">No account required. We'll use this to send your confirmation.</p>
               <div className="space-y-4">
                 {[
-                  { label: 'Full Name', key: 'name', type: 'text', required: true, placeholder: 'e.g. Rahim Uddin' },
-                  { label: 'Mobile Number', key: 'mobile', type: 'tel', required: true, placeholder: 'e.g. 01712345678' },
-                  { label: 'Email (optional)', key: 'email', type: 'email', required: false, placeholder: 'e.g. rahim@email.com' },
-                  { label: 'Address (optional)', key: 'address', type: 'text', required: false, placeholder: 'e.g. Mirpur, Dhaka' },
+                  { label: 'Full Name', key: 'name', type: 'text', required: true, placeholder: 'e.g. Rahim Uddin', hint: '' },
+                  { label: 'Mobile Number', key: 'mobile', type: 'tel', required: true, placeholder: 'e.g. 01712345678', hint: 'Bangladesh mobile format: 01XXXXXXXXX' },
+                  { label: 'Email (optional)', key: 'email', type: 'email', required: false, placeholder: 'e.g. rahim@email.com', hint: '' },
+                  { label: 'Address (optional)', key: 'address', type: 'text', required: false, placeholder: 'e.g. Mirpur, Dhaka', hint: '' },
                 ].map(f => (
                   <div key={f.key}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1039,6 +1039,9 @@ export default function RegistrationFormWrapper() {
                       inputMode={f.type === 'tel' ? 'tel' : undefined}
                       className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green)"
                     />
+                    {f.hint && (
+                      <p className="mt-1 text-xs text-gray-400">{f.hint}</p>
+                    )}
                   </div>
                 ))}
               </div>
