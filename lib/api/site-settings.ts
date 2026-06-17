@@ -77,6 +77,28 @@ let _cached: PublicSiteSettings | null = null;
 let _cacheTime = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+/**
+ * Rewrites a stored media URL that still points to localhost (uploaded in dev
+ * with BACKEND_URL=http://localhost:4000) to use the configured API base URL.
+ * This handles the dev→production migration period without a DB migration.
+ * On dev both values are localhost so the rewrite is a no-op.
+ */
+function normalizeMediaUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiBase) return url;
+  try {
+    const stored = new URL(url);
+    if (stored.hostname === 'localhost' || stored.hostname === '127.0.0.1') {
+      const api = new URL(apiBase);
+      return `${api.origin}${stored.pathname}${stored.search}`;
+    }
+  } catch {
+    // URL parse failure — return as-is
+  }
+  return url;
+}
+
 export async function getPublicSiteSettings(fetchOptions?: RequestInit): Promise<PublicSiteSettings> {
   // Return cache if fresh (client-side only)
   if (typeof window !== 'undefined' && _cached && Date.now() - _cacheTime < CACHE_TTL) {
@@ -84,7 +106,15 @@ export async function getPublicSiteSettings(fetchOptions?: RequestInit): Promise
   }
   try {
     const res = await apiFetch<PublicSiteSettings>('/public/site-settings', fetchOptions);
-    const settings = { ...DEFAULT_SETTINGS, ...res.data };
+    const raw = res.data;
+    const settings: PublicSiteSettings = {
+      ...DEFAULT_SETTINGS,
+      ...raw,
+      // Normalize stored localhost URLs → current API origin
+      primaryLogoUrl: normalizeMediaUrl(raw.primaryLogoUrl),
+      secondaryLogoUrl: normalizeMediaUrl(raw.secondaryLogoUrl),
+      faviconUrl: normalizeMediaUrl(raw.faviconUrl),
+    };
     if (typeof window !== 'undefined') {
       _cached = settings;
       _cacheTime = Date.now();
