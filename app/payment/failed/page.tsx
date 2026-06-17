@@ -3,10 +3,9 @@ import Link from 'next/link';
 import { XCircle, AlertCircle, Download } from 'lucide-react';
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
 import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
+import { getValidationSlipUrl } from '@/lib/utils/api-url';
 
 export const metadata: Metadata = { title: 'Payment Failed', robots: { index: false, follow: false } };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 const REASON_MESSAGES: Record<string, string> = {
   payment_failed:      'Your payment was not completed. No charge has been made to your account.',
@@ -39,9 +38,7 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
 
   const isUnknownOutcome = isMissingTxn || reason === 'verification_failed';
 
-  const pdfUrl = booking
-    ? `${API_URL}/api/v1/public/bookings/${encodeURIComponent(booking)}/validation-slip.pdf`
-    : null;
+  const pdfUrl = booking ? getValidationSlipUrl(booking) : null;
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">

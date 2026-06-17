@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle, XCircle, AlertCircle, Clock, Download, RefreshCw } from 'lucide-react';
+import { getPublicApiUrl, getValidationSlipUrl } from '@/lib/utils/api-url';
 
 export const metadata: Metadata = { title: 'Payment Status', robots: { index: false, follow: false } };
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
 interface PaymentStatusData {
   bookingRef: string;
@@ -129,7 +128,7 @@ export default async function PaymentStatusPage({ searchParams }: Props) {
   if (bookingRef) {
     try {
       const r = await fetch(
-        `${API_URL}/public/payments/status?bookingRef=${encodeURIComponent(bookingRef)}`,
+        getPublicApiUrl(`/public/payments/status?bookingRef=${encodeURIComponent(bookingRef)}`),
         { cache: 'no-store' },
       );
       if (r.ok) {
@@ -140,7 +139,7 @@ export default async function PaymentStatusPage({ searchParams }: Props) {
   } else if (txn) {
     try {
       const r = await fetch(
-        `${API_URL}/public/payments/status?paymentRef=${encodeURIComponent(txn)}`,
+        getPublicApiUrl(`/public/payments/status?paymentRef=${encodeURIComponent(txn)}`),
         { cache: 'no-store' },
       );
       if (r.ok) {
@@ -155,7 +154,7 @@ export default async function PaymentStatusPage({ searchParams }: Props) {
   const sd = getStatusDisplay(paymentStatus, reason);
 
   const validationSlipUrl = effectiveBookingRef
-    ? `${API_URL}/public/bookings/${encodeURIComponent(effectiveBookingRef)}/validation-slip.pdf`
+    ? getValidationSlipUrl(effectiveBookingRef)
     : null;
 
   const isPaid = paymentStatus === 'success';
