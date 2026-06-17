@@ -5,7 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   ArrowLeft, ArrowRight, Plus, Trash2, Syringe, User,
-  CheckCircle, MapPin, CalendarDays, Clock, Search, Building2,
+  CheckCircle, MapPin, CalendarDays, Clock, Search, Building2, Download,
 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
@@ -569,33 +569,61 @@ export default function RegistrationFormWrapper() {
     </div>
   );
 
-  // Booking created but online payment couldn't be initialised — show manual payment instructions
+  // Booking created but online payment couldn't be initialised — show manual payment / visit center instructions
   if (paymentUnavailable) {
     const phone = siteSettings?.supportPhone ?? siteSettings?.officialPhone;
     const whatsapp = siteSettings?.whatsappNumber;
+    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+    const pdfUrl = pendingBookingNumber
+      ? `${apiBase}/api/v1/public/campaign-registrations/${encodeURIComponent(pendingBookingNumber)}/slip.pdf`
+      : null;
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
-        <div className="max-w-lg mx-auto px-4 py-10 text-center">
-          <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-8">
+        <div className="max-w-lg mx-auto px-4 py-10">
+          <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-7">
             <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
               <CheckCircle size={28} className="text-emerald-600" />
             </div>
-            <h2 className="text-lg font-bold text-(--bpa-navy) mb-2">Booking Received</h2>
-            <p className="text-sm text-gray-600 mb-1">
-              Your registration has been saved. Online payment is temporarily unavailable — please complete payment manually by contacting BPA support.
+            <h2 className="text-xl font-bold text-(--bpa-navy) mb-1 text-center">Booking Confirmed!</h2>
+            <p className="text-sm text-gray-500 text-center mb-5">
+              আপনার বুকিং সংরক্ষিত হয়েছে। Your registration is saved.
             </p>
+
             {pendingBookingNumber && (
-              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mt-4 mb-4 text-left">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Booking Reference</p>
-                <p className="font-mono font-bold text-(--bpa-navy) text-lg tracking-wider">{pendingBookingNumber}</p>
-                <p className="text-xs text-gray-400 mt-1">Quote this number when contacting support or making payment.</p>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-4 mb-5">
+                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Booking Reference</p>
+                <p className="font-mono font-extrabold text-(--bpa-navy) text-2xl tracking-wider">{pendingBookingNumber}</p>
+                <p className="text-xs text-gray-500 mt-1">Save this reference — you&apos;ll need it at the vaccination center.</p>
               </div>
             )}
-            <div className="space-y-2 mt-2">
+
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-4 mb-5 text-sm">
+              <p className="font-bold text-blue-800 mb-2">Visit the vaccination center to pay</p>
+              <p className="text-blue-700 mb-2">
+                Online payment is temporarily unavailable. You can visit the vaccination center on your selected date
+                and pay at the venue. Show your booking reference at the entrance.
+              </p>
+              <p className="text-blue-600 text-xs">
+                অনলাইন পেমেন্ট সাময়িকভাবে উপলব্ধ নেই। আপনি নির্ধারিত তারিখে টিকাদান কেন্দ্রে গিয়ে সরাসরি পেমেন্ট করতে পারবেন।
+                প্রবেশদ্বারে আপনার বুকিং রেফারেন্স দেখান।
+              </p>
+            </div>
+
+            <div className="space-y-2.5">
+              {pdfUrl && (
+                <a
+                  href={pdfUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                >
+                  <Download size={15} /> Download Booking Slip (PDF)
+                </a>
+              )}
               {phone && (
                 <a
                   href={`tel:${phone.replace(/\s/g, '')}`}
-                  className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  className="flex items-center justify-center gap-2 bg-(--bpa-navy) text-white font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
                 >
                   <span>📞</span> Call BPA Support: {phone}
                 </a>
@@ -605,16 +633,17 @@ export default function RegistrationFormWrapper() {
                   href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  className="flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
                 >
                   <span>💬</span> WhatsApp: {whatsapp}
                 </a>
               )}
-              {!phone && !whatsapp && (
-                <p className="text-sm text-gray-500">Please contact BPA to complete your payment and confirm your booking.</p>
+              {!phone && !whatsapp && !pdfUrl && (
+                <p className="text-sm text-gray-500 text-center">Please contact BPA to confirm your booking details.</p>
               )}
             </div>
-            <div className="mt-5">
+
+            <div className="mt-6 text-center">
               <Link href={`/campaigns/${slug}`} className="text-sm text-(--bpa-green) hover:underline inline-flex items-center gap-1">
                 <ArrowLeft size={13} /> Back to Campaign
               </Link>

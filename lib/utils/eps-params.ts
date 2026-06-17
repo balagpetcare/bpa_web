@@ -14,6 +14,8 @@ export interface NormalizedPaymentParams {
   ref: string | null;
   /** Failure reason string from the backend redirect. */
   reason: string | null;
+  /** Campaign booking number (BPA-BK-...) when included in the redirect URL. */
+  booking: string | null;
 }
 
 // All param names EPS may use for the merchant transaction ID
@@ -70,12 +72,13 @@ export function normalizePaymentParams(params: SearchParams): NormalizedPaymentP
   }
 
   const reason = first(params['reason'])?.trim() ?? null;
+  const booking = first(params['booking'])?.trim() ?? null;
 
   if (process.env.NODE_ENV === 'development' || process.env.NEXT_PUBLIC_DEBUG_PAYMENT === '1') {
     // Log received key names only — never log values to avoid leaking payment data
     const keys = Object.keys(params).join(', ') || '(none)';
-    console.log(`[payment-page] Query keys received: ${keys} | txn=${txn ? 'found' : 'missing'} ref=${ref ? 'found' : 'missing'}`);
+    console.log(`[payment-page] Query keys received: ${keys} | txn=${txn ? 'found' : 'missing'} ref=${ref ? 'found' : 'missing'} booking=${booking ? 'found' : 'missing'}`);
   }
 
-  return { txn, ref, reason };
+  return { txn, ref, reason, booking };
 }

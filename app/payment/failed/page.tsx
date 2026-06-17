@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { XCircle, AlertCircle } from 'lucide-react';
+import { XCircle, AlertCircle, Download } from 'lucide-react';
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
 
 export const metadata: Metadata = { title: 'Payment Failed', robots: { index: false, follow: false } };
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 const REASON_MESSAGES: Record<string, string> = {
   payment_failed:      'Your payment was not completed. No charge has been made to your account.',
@@ -19,16 +21,14 @@ interface Props {
 
 export default async function PaymentFailedPage({ searchParams }: Props) {
   const raw = await searchParams;
-  const { txn, ref, reason } = normalizePaymentParams(raw);
+  const { txn, ref, reason, booking } = normalizePaymentParams(raw);
 
   // Display reference: prefer the 17-digit txn, fall back to any order ref found
   const displayRef = txn ?? ref;
 
-  // When the transaction ID was missing but we received some other reference,
-  // this likely means EPS sent the callback with a non-standard param name and
-  // the backend couldn't normalise it — the payment outcome is unknown.
   const isMissingTxn = reason === 'missing_txn';
   const hasAnyRef = !!displayRef;
+  const canVisitCenter = reason === 'payment_failed' || reason === 'cancelled' || isMissingTxn;
 
   let message: string;
   if (isMissingTxn && hasAnyRef) {
@@ -39,8 +39,11 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
     message = REASON_MESSAGES[reason ?? ''] ?? 'The payment was not completed. No charge has been made to your account.';
   }
 
-  // Choose icon/colour based on whether the outcome is "definitely failed" or "unknown"
   const isUnknownOutcome = isMissingTxn || reason === 'verification_failed';
+
+  const pdfUrl = booking
+    ? `${API_URL}/api/v1/public/campaign-registrations/${encodeURIComponent(booking)}/slip.pdf`
+    : null;
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
@@ -55,15 +58,50 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
         <h1 className="text-3xl font-bold text-(--bpa-navy) mb-3">
           {isUnknownOutcome ? 'Payment Status Unknown' : 'Payment Failed'}
         </h1>
-        <p className="text-gray-500 leading-relaxed mb-8">{message}</p>
+        <p className="text-gray-500 leading-relaxed mb-6">{message}</p>
 
-        {displayRef && (
-          <p className="text-xs text-gray-400 mb-8 font-mono bg-gray-50 rounded-lg px-4 py-2 inline-block">
+        {/* Booking reference — shown prominently when we have one */}
+        {booking && (
+          <div className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 mb-6 text-left">
+            <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Booking Reference</p>
+            <p className="font-mono font-extrabold text-(--bpa-navy) text-xl tracking-wider">{booking}</p>
+          </div>
+        )}
+
+        {displayRef && !booking && (
+          <p className="text-xs text-gray-400 mb-6 font-mono bg-gray-50 rounded-lg px-4 py-2 inline-block">
             Reference: {displayRef}
           </p>
         )}
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-8 text-left">
+        {/* Pay at center message — shown for failed/cancelled/unknown when we have a booking */}
+        {canVisitCenter && booking && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 mb-6 text-left">
+            <p className="font-bold mb-1">Your booking is still saved</p>
+            <p className="text-emerald-700 mb-2">
+              You can visit the vaccination center on your selected date and pay at the venue.
+              Show your booking reference <span className="font-mono font-bold">{booking}</span> at the entrance.
+            </p>
+            <p className="text-emerald-600 text-xs">
+              আপনার বুকিং সংরক্ষিত হয়েছে। আপনি নির্ধারিত তারিখে টিকাদান কেন্দ্রে গিয়ে সরাসরি পেমেন্ট করতে পারবেন।
+            </p>
+          </div>
+        )}
+
+        {/* PDF download */}
+        {pdfUrl && (
+          <a
+            href={pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm mb-4"
+          >
+            <Download size={16} />
+            Download Booking Slip (PDF)
+          </a>
+        )}
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-6 text-left">
           <p className="font-semibold mb-1">Need help?</p>
           <p className="text-yellow-700">
             If you believe a payment was deducted, please contact us at{' '}
