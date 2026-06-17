@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle, Download } from 'lucide-react';
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
+import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 
 export const metadata: Metadata = { title: 'Payment Successful', robots: { index: false, follow: false } };
 
@@ -16,12 +17,22 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
   const { txn, booking } = normalizePaymentParams(raw);
 
   const pdfUrl = booking
-    ? `${API_URL}/api/v1/public/campaign-registrations/${encodeURIComponent(booking)}/slip.pdf`
+    ? `${API_URL}/api/v1/public/campaign-registrations/booking/${encodeURIComponent(booking)}/slip.pdf`
     : null;
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
       <div className="max-w-md w-full mx-auto px-4 text-center">
+
+        {pdfUrl && booking && (
+          <AutoDownloadFile
+            url={pdfUrl}
+            filename={`BPA-Booking-Slip-${booking}.pdf`}
+            storageKey={`bpa_booking_slip_downloaded_${booking}`}
+            delayMs={700}
+          />
+        )}
+
         <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
           <CheckCircle size={48} className="text-(--bpa-green)" />
         </div>
@@ -38,7 +49,9 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-4 mb-6 text-left">
             <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Booking Reference</p>
             <p className="font-mono font-extrabold text-(--bpa-navy) text-xl tracking-wider">{booking}</p>
-            <p className="text-xs text-gray-500 mt-1">Please save this reference for your visit.</p>
+            <p className="text-xs text-gray-500 mt-1">
+              Please bring this booking slip or reference to the vaccination center.
+            </p>
           </div>
         )}
 
@@ -49,15 +62,24 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
         )}
 
         {pdfUrl && (
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm mb-4"
-          >
-            <Download size={16} />
-            Download Booking Slip (PDF)
-          </a>
+          <div className="mb-5">
+            <p className="text-xs text-gray-400 mb-2 text-center">
+              Your booking slip download should start automatically. If it does not, tap the button below.
+            </p>
+            <p className="text-xs text-gray-400 mb-3 text-center">
+              আপনার বুকিং স্লিপ স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে। না হলে নিচের বাটনে চাপ দিন।
+            </p>
+            <a
+              href={pdfUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+            >
+              <Download size={16} />
+              Download Booking Slip PDF
+            </a>
+          </div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">

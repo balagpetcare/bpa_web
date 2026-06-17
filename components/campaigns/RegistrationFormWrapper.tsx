@@ -7,6 +7,7 @@ import {
   ArrowLeft, ArrowRight, Plus, Trash2, Syringe, User,
   CheckCircle, MapPin, CalendarDays, Clock, Search, Building2, Download,
 } from 'lucide-react';
+import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
 import { getCampaignBySlug, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
@@ -575,10 +576,18 @@ export default function RegistrationFormWrapper() {
     const whatsapp = siteSettings?.whatsappNumber;
     const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
     const pdfUrl = pendingBookingNumber
-      ? `${apiBase}/api/v1/public/campaign-registrations/${encodeURIComponent(pendingBookingNumber)}/slip.pdf`
+      ? `${apiBase}/api/v1/public/campaign-registrations/booking/${encodeURIComponent(pendingBookingNumber)}/slip.pdf`
       : null;
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
+        {pdfUrl && pendingBookingNumber && (
+          <AutoDownloadFile
+            url={pdfUrl}
+            filename={`BPA-Booking-Slip-${pendingBookingNumber}.pdf`}
+            storageKey={`bpa_booking_slip_downloaded_${pendingBookingNumber}`}
+            delayMs={700}
+          />
+        )}
         <div className="max-w-lg mx-auto px-4 py-10">
           <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-7">
             <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
@@ -611,14 +620,23 @@ export default function RegistrationFormWrapper() {
 
             <div className="space-y-2.5">
               {pdfUrl && (
-                <a
-                  href={pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
-                >
-                  <Download size={15} /> Download Booking Slip (PDF)
-                </a>
+                <div>
+                  <p className="text-xs text-gray-400 mb-1.5 text-center">
+                    Your booking slip download should start automatically. If not, tap below.
+                  </p>
+                  <p className="text-xs text-gray-400 mb-2 text-center">
+                    আপনার বুকিং স্লিপ স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে। না হলে নিচের বাটনে চাপ দিন।
+                  </p>
+                  <a
+                    href={pdfUrl}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-5 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                  >
+                    <Download size={15} /> Download Booking Slip PDF
+                  </a>
+                </div>
               )}
               {phone && (
                 <a

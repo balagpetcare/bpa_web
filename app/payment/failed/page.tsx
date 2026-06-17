@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { XCircle, AlertCircle, Download } from 'lucide-react';
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
+import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 
 export const metadata: Metadata = { title: 'Payment Failed', robots: { index: false, follow: false } };
 
@@ -12,7 +13,6 @@ const REASON_MESSAGES: Record<string, string> = {
   cancelled:           'You cancelled the payment. No charge has been made to your account.',
   verification_failed: 'We could not verify your payment status. Please contact us if you believe payment was deducted.',
   error:               'An unexpected error occurred. Please contact support if you believe payment was deducted.',
-  // missing_txn is handled separately below — message depends on whether a ref ID was found
 };
 
 interface Props {
@@ -23,9 +23,7 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
   const raw = await searchParams;
   const { txn, ref, reason, booking } = normalizePaymentParams(raw);
 
-  // Display reference: prefer the 17-digit txn, fall back to any order ref found
   const displayRef = txn ?? ref;
-
   const isMissingTxn = reason === 'missing_txn';
   const hasAnyRef = !!displayRef;
   const canVisitCenter = reason === 'payment_failed' || reason === 'cancelled' || isMissingTxn;
@@ -42,12 +40,22 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
   const isUnknownOutcome = isMissingTxn || reason === 'verification_failed';
 
   const pdfUrl = booking
-    ? `${API_URL}/api/v1/public/campaign-registrations/${encodeURIComponent(booking)}/slip.pdf`
+    ? `${API_URL}/api/v1/public/campaign-registrations/booking/${encodeURIComponent(booking)}/slip.pdf`
     : null;
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
       <div className="max-w-md w-full mx-auto px-4 text-center">
+
+        {pdfUrl && booking && (
+          <AutoDownloadFile
+            url={pdfUrl}
+            filename={`BPA-Booking-Slip-${booking}.pdf`}
+            storageKey={`bpa_booking_slip_downloaded_${booking}`}
+            delayMs={700}
+          />
+        )}
+
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isUnknownOutcome ? 'bg-amber-50' : 'bg-red-50'}`}>
           {isUnknownOutcome
             ? <AlertCircle size={48} className="text-amber-500" />
@@ -60,9 +68,8 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
         </h1>
         <p className="text-gray-500 leading-relaxed mb-6">{message}</p>
 
-        {/* Booking reference — shown prominently when we have one */}
         {booking && (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 mb-6 text-left">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 mb-5 text-left">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Booking Reference</p>
             <p className="font-mono font-extrabold text-(--bpa-navy) text-xl tracking-wider">{booking}</p>
           </div>
@@ -74,31 +81,39 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
           </p>
         )}
 
-        {/* Pay at center message — shown for failed/cancelled/unknown when we have a booking */}
         {canVisitCenter && booking && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 mb-6 text-left">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-sm text-emerald-800 mb-5 text-left">
             <p className="font-bold mb-1">Your booking is still saved</p>
             <p className="text-emerald-700 mb-2">
-              You can visit the vaccination center on your selected date and pay at the venue.
-              Show your booking reference <span className="font-mono font-bold">{booking}</span> at the entrance.
+              Your booking has been received. If online payment was unavailable or you missed the payment step,
+              you can still visit our vaccination center with this booking reference and complete payment at the center.
             </p>
             <p className="text-emerald-600 text-xs">
-              আপনার বুকিং সংরক্ষিত হয়েছে। আপনি নির্ধারিত তারিখে টিকাদান কেন্দ্রে গিয়ে সরাসরি পেমেন্ট করতে পারবেন।
+              আপনার বুকিং গ্রহণ করা হয়েছে। অনলাইন পেমেন্ট সম্পন্ন না হলেও আপনি এই বুকিং রেফারেন্স নিয়ে
+              আমাদের ভ্যাকসিনেশন সেন্টারে এসে সরাসরি পেমেন্ট করে সেবা নিতে পারবেন।
             </p>
           </div>
         )}
 
-        {/* PDF download */}
         {pdfUrl && (
-          <a
-            href={pdfUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm mb-4"
-          >
-            <Download size={16} />
-            Download Booking Slip (PDF)
-          </a>
+          <div className="mb-5">
+            <p className="text-xs text-gray-400 mb-2 text-center">
+              Your booking slip download should start automatically. If it does not, tap the button below.
+            </p>
+            <p className="text-xs text-gray-400 mb-3 text-center">
+              আপনার বুকিং স্লিপ স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে। না হলে নিচের বাটনে চাপ দিন।
+            </p>
+            <a
+              href={pdfUrl}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+            >
+              <Download size={16} />
+              Download Booking Slip PDF
+            </a>
+          </div>
         )}
 
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-800 mb-6 text-left">
