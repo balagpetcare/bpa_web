@@ -304,6 +304,8 @@ export interface RegisterResponse {
   registration: CampaignRegistration;
   paymentUrl: string | null;
   isFree: boolean;
+  paymentGatewayUnavailable?: boolean;
+  paymentMode?: 'MANUAL_FALLBACK' | 'PAYMENT_INIT_FAILED';
 }
 
 // Waitlist payload

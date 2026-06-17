@@ -529,8 +529,8 @@ export default function RegistrationFormWrapper() {
         email: owner.email || undefined, address: owner.address || undefined,
         petIds: guestData.petIds,
       });
-      if ((result as { paymentGatewayUnavailable?: boolean }).paymentGatewayUnavailable) {
-        // Booking created but payment gateway unavailable — show support message
+      if (result.paymentGatewayUnavailable) {
+        // Booking created but payment gateway unavailable or failed — show manual payment instructions
         setPendingBookingNumber(result.registration.bookingNumber);
         setPaymentUnavailable(true);
         setSubmitting(false);
@@ -569,35 +569,51 @@ export default function RegistrationFormWrapper() {
     </div>
   );
 
-  // Payment gateway unavailable — booking created but payment couldn't be initialised
+  // Booking created but online payment couldn't be initialised — show manual payment instructions
   if (paymentUnavailable) {
     const phone = siteSettings?.supportPhone ?? siteSettings?.officialPhone;
-    const title = siteSettings?.registrationErrorTitle ?? 'Online registration temporarily unavailable';
-    const message = siteSettings?.registrationErrorMessage ??
-      'Online registration/payment is temporarily unavailable. Please call BPA support for assistance.';
+    const whatsapp = siteSettings?.whatsappNumber;
     return (
       <div className="min-h-screen bg-gray-50 pt-24 pb-10">
         <div className="max-w-lg mx-auto px-4 py-10 text-center">
-          <div className="bg-white rounded-2xl border border-amber-200 shadow-sm p-8">
-            <div className="w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">⚠️</span>
+          <div className="bg-white rounded-2xl border border-emerald-200 shadow-sm p-8">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={28} className="text-emerald-600" />
             </div>
-            <h2 className="text-lg font-bold text-(--bpa-navy) mb-2">{title}</h2>
-            <p className="text-sm text-gray-600 mb-1">{message}</p>
+            <h2 className="text-lg font-bold text-(--bpa-navy) mb-2">Booking Received</h2>
+            <p className="text-sm text-gray-600 mb-1">
+              Your registration has been saved. Online payment is temporarily unavailable — please complete payment manually by contacting BPA support.
+            </p>
             {pendingBookingNumber && (
-              <p className="text-xs text-gray-400 mt-3 mb-4">
-                Your booking reference: <span className="font-mono font-bold text-(--bpa-navy)">{pendingBookingNumber}</span>
-                <br />Please mention this number when calling support.
-              </p>
+              <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mt-4 mb-4 text-left">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-1">Booking Reference</p>
+                <p className="font-mono font-bold text-(--bpa-navy) text-lg tracking-wider">{pendingBookingNumber}</p>
+                <p className="text-xs text-gray-400 mt-1">Quote this number when contacting support or making payment.</p>
+              </div>
             )}
-            {phone && (
-              <a
-                href={`tel:${phone.replace(/\s/g, '')}`}
-                className="inline-flex items-center gap-2 bg-(--bpa-green) text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm mt-2"
-              >
-                <span>📞</span> Call BPA Support: {phone}
-              </a>
-            )}
+            <div className="space-y-2 mt-2">
+              {phone && (
+                <a
+                  href={`tel:${phone.replace(/\s/g, '')}`}
+                  className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                >
+                  <span>📞</span> Call BPA Support: {phone}
+                </a>
+              )}
+              {whatsapp && (
+                <a
+                  href={`https://wa.me/${whatsapp.replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-emerald-600 text-white font-bold px-6 py-3 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                >
+                  <span>💬</span> WhatsApp: {whatsapp}
+                </a>
+              )}
+              {!phone && !whatsapp && (
+                <p className="text-sm text-gray-500">Please contact BPA to complete your payment and confirm your booking.</p>
+              )}
+            </div>
             <div className="mt-5">
               <Link href={`/campaigns/${slug}`} className="text-sm text-(--bpa-green) hover:underline inline-flex items-center gap-1">
                 <ArrowLeft size={13} /> Back to Campaign
