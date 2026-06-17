@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle } from 'lucide-react';
+import { normalizePaymentParams } from '@/lib/utils/eps-params';
 
 export const metadata: Metadata = { title: 'Payment Successful', robots: { index: false, follow: false } };
 
 interface Props {
-  searchParams: Promise<{ txn?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function PaymentSuccessPage({ searchParams }: Props) {
-  const { txn } = await searchParams;
+  const raw = await searchParams;
+  const { txn } = normalizePaymentParams(raw);
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
