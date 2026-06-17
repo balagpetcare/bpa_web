@@ -1,0 +1,18 @@
+
+> landing-web@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 13328, using available port 3002 instead.
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://192.168.10.108:3002
+✓ Ready in 424ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          13328
+- Dir:          D:\bpa_main\bpa_web
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 13328 /F to stop it.
+[?25h
