@@ -8,6 +8,7 @@ import { Info } from 'lucide-react';
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
+import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
 import { initiateContribution } from '@/lib/api/contributions';
 import { getPublicZones, getPublicPlans } from '@/lib/api/community-care';
 import { assertSafePaymentUrl } from '@/lib/utils/payment-redirect';
@@ -44,6 +45,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
   const [errorMsg, setErrorMsg] = useState('');
   const [redirecting, setRedirecting] = useState(false);
   const [referenceDataLoading, setReferenceDataLoading] = useState(true);
+  const [locationValue, setLocationValue] = useState<LocationValue>({});
 
   useEffect(() => {
     Promise.all([getPublicZones(), getPublicPlans()])
@@ -82,6 +84,7 @@ export default function ContributionForm({ defaultZoneId }: Props) {
         contributorMobile: data.contributorMobile,
         contributorEmail: data.contributorEmail || undefined,
         contributorAddress: data.contributorAddress || undefined,
+        ...locationValue,
         isAnonymous: data.isAnonymous ?? false,
       });
       assertSafePaymentUrl(result.paymentUrl);
@@ -174,6 +177,17 @@ export default function ContributionForm({ defaultZoneId }: Props) {
         error={errors.contributorEmail?.message}
         {...register('contributorEmail')}
       />
+
+      <div>
+        <p className="text-sm font-semibold text-(--bpa-navy) mb-3">Location (optional)</p>
+        <LocationSelector
+          value={locationValue}
+          onChange={setLocationValue}
+          showUnion
+          showWard
+          showAddressLine={false}
+        />
+      </div>
 
       <FormField
         label="Address"

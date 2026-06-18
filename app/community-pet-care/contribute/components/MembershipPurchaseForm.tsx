@@ -8,6 +8,7 @@ import { Info, CheckCircle, Copy, ShieldCheck } from 'lucide-react';
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
+import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
 import {
   initiateMembershipPurchase,
   submitTransaction,
@@ -55,6 +56,7 @@ export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice
   const [pendingPurchase, setPendingPurchase] = useState<InitiatePurchaseResponse | null>(null);
   const [mfsSubmitted, setMfsSubmitted] = useState(false);
   const [mfsError, setMfsError] = useState('');
+  const [locationValue, setLocationValue] = useState<LocationValue>({});
 
   useEffect(() => {
     getPublicZones().then(setZones).catch(() => {});
@@ -87,6 +89,7 @@ export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice
         memberMobile: data.memberMobile,
         memberEmail: data.memberEmail || undefined,
         memberAddress: data.memberAddress || undefined,
+        ...locationValue,
         petCount: data.petCount ? parseInt(data.petCount, 10) : undefined,
         preferredZoneId: data.preferredZoneId || undefined,
       });
@@ -250,6 +253,17 @@ export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice
         error={errors.memberEmail?.message}
         {...register('memberEmail')}
       />
+
+      <div>
+        <p className="text-sm font-semibold text-(--bpa-navy) mb-3">Location (optional)</p>
+        <LocationSelector
+          value={locationValue}
+          onChange={setLocationValue}
+          showUnion
+          showWard
+          showAddressLine={false}
+        />
+      </div>
 
       <FormField
         label="Address"
