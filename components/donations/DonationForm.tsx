@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { initializeDonation, DonationPurpose, DonationCampaign } from '@/lib/api/donations';
+import { ApiError } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import FormField from '@/components/ui/FormField';
 import Alert from '@/components/ui/Alert';
@@ -88,8 +89,20 @@ export default function DonationForm({ purposes, campaigns }: DonationFormProps)
       } else {
         throw new Error('Could not initialize payment gateway.');
       }
-    } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+    } catch (err: unknown) {
+      if (err instanceof ApiError) {
+        const body = err.data as Record<string, unknown> | undefined;
+        const errorObj = body?.error as Record<string, unknown> | undefined;
+        const message =
+          (errorObj?.message as string | undefined) ||
+          (body?.message as string | undefined) ||
+          err.message ||
+          'An unexpected error occurred.';
+        const refNo = body?.donationReferenceNo as string | undefined;
+        setError(refNo ? `${message} (Reference: ${refNo})` : message);
+      } else {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      }
       setLoading(false);
     }
   };
