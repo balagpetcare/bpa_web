@@ -8,6 +8,8 @@ import { buildMetadata } from '@/lib/seo';
 import { getSeoData } from '@/lib/api/seo';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 
+import { getPublicSiteSettings, addressLines } from '@/lib/api/site-settings';
+
 export async function generateMetadata(): Promise<Metadata> {
   const seo = await getSeoData('/contact');
   return buildMetadata(
@@ -19,29 +21,6 @@ export async function generateMetadata(): Promise<Metadata> {
   );
 }
 
-const CONTACT_INFO = [
-  {
-    icon: MapPin,
-    label: 'Address',
-    lines: ['House 12, Road 5, Block D', 'Bashundhara R/A', 'Dhaka 1229, Bangladesh'],
-  },
-  {
-    icon: Phone,
-    label: 'Phone',
-    lines: ['+880 2-8989-9999', '+880 1700-000000'],
-  },
-  {
-    icon: Mail,
-    label: 'Email',
-    lines: ['info@bpa.org.bd', 'support@bpa.org.bd'],
-  },
-  {
-    icon: Clock,
-    label: 'Office Hours',
-    lines: ['Sunday – Thursday: 9 AM – 6 PM', 'Friday – Saturday: Closed'],
-  },
-];
-
 const FAQ = [
   { question: 'How quickly will you respond to my message?', answer: 'We aim to respond to all messages within 1–2 business days. For urgent matters, please call our office directly.' },
   { question: 'I found an injured stray animal — who do I call?', answer: 'Please call our emergency animal rescue line at +880 1700-000000. We are available for rescue calls 7 days a week.' },
@@ -49,7 +28,32 @@ const FAQ = [
   { question: 'Can I visit the BPA office?', answer: 'Yes — our office is open Sunday to Thursday, 9 AM to 6 PM. We recommend calling ahead to schedule a visit.' },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const s = await getPublicSiteSettings();
+
+  const address = s.addressLine 
+    ? [s.addressLine] 
+    : addressLines(s).length > 0 
+      ? addressLines(s) 
+      : ['House 12, Road 5, Block D', 'Bashundhara R/A', 'Dhaka 1229, Bangladesh'];
+
+  const phones = [s.primaryPhone, s.secondaryPhone, s.officialPhone, s.supportPhone].filter(Boolean) as string[];
+  const finalPhones = phones.length > 0 ? phones : ['+880 2-8989-9999', '+880 1700-000000'];
+
+  const emails = [s.contactEmail, s.supportEmail, s.generalEmail].filter(Boolean) as string[];
+  const finalEmails = emails.length > 0 ? emails : ['info@bpa.org.bd', 'support@bpa.org.bd'];
+
+  const officeHours = s.officeHours ? [s.officeHours] : ['Sunday – Thursday: 9 AM – 6 PM', 'Friday – Saturday: Closed'];
+
+  const contactInfo = [
+    { icon: MapPin, label: 'Address', lines: address },
+    { icon: Phone, label: 'Phone', lines: finalPhones },
+    { icon: Mail, label: 'Email', lines: finalEmails },
+    { icon: Clock, label: 'Office Hours', lines: officeHours },
+  ];
+
+  const siteName = s.siteName || 'Bangladesh Pet Association';
+
   return (
     <>
       <BreadcrumbJsonLd items={[{ name: 'Contact Us', url: '/contact' }]} />
@@ -79,7 +83,7 @@ export default function ContactPage() {
                 </p>
               </div>
 
-              {CONTACT_INFO.map(({ icon: Icon, label, lines }) => (
+              {contactInfo.map(({ icon: Icon, label, lines }) => (
                 <div key={label} className="flex gap-4">
                   <div className="w-10 h-10 bg-(--bpa-green) rounded-lg flex items-center justify-center shrink-0">
                     <Icon size={18} className="text-(--bpa-green)" />
@@ -105,16 +109,31 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Map placeholder */}
+      {/* Map section */}
       <section className="pb-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 h-80 flex items-center justify-center">
-            <div className="text-center">
-              <MapPin size={32} className="text-(--bpa-navy) mx-auto mb-3" />
-              <p className="text-sm font-medium text-gray-600">BPA Office — Bashundhara R/A, Dhaka</p>
-              <p className="text-xs text-gray-400 mt-1">Interactive map coming soon</p>
+          {s.mapEmbedUrl ? (
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm h-80">
+              <iframe
+                src={s.mapEmbedUrl}
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={true}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`${siteName} Location Map`}
+              ></iframe>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-2xl overflow-hidden border border-gray-200 shadow-sm bg-gray-100 h-80 flex items-center justify-center">
+              <div className="text-center">
+                <MapPin size={32} className="text-(--bpa-navy) mx-auto mb-3" />
+                <p className="text-sm font-medium text-gray-600">{siteName} Office — Bashundhara R/A, Dhaka</p>
+                <p className="text-xs text-gray-400 mt-1">Interactive map coming soon</p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

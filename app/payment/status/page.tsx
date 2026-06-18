@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CheckCircle, XCircle, AlertCircle, Clock, Download, RefreshCw } from 'lucide-react';
 import { getPublicApiUrl, getValidationSlipUrl } from '@/lib/utils/api-url';
+import { getPublicSiteSettings } from '@/lib/api/site-settings';
 
 export const metadata: Metadata = { title: 'Payment Status', robots: { index: false, follow: false } };
 
@@ -119,6 +120,8 @@ function first(v: string | string[] | undefined): string | undefined {
 export default async function PaymentStatusPage({ searchParams }: Props) {
   const raw = await searchParams;
   const bookingRef = first(raw.bookingRef)?.trim();
+  const settings = await getPublicSiteSettings().catch(() => null);
+  const supportEmail = settings?.contactEmail || settings?.supportEmail || settings?.generalEmail || 'info@bpa.org.bd';
   const txn = first(raw.txn)?.trim();
   const reason = first(raw.reason)?.trim();
 
@@ -245,7 +248,7 @@ export default async function PaymentStatusPage({ searchParams }: Props) {
             <p className="font-semibold mb-1">Could not load booking details</p>
             <p className="text-yellow-700">
               Unable to fetch current status. If you need help, contact us at{' '}
-              <a href="mailto:info@bpa.org.bd" className="underline font-medium">info@bpa.org.bd</a>.
+              <a href={`mailto:${supportEmail}`} className="underline font-medium">{supportEmail}</a>.
             </p>
           </div>
         )}
@@ -256,7 +259,7 @@ export default async function PaymentStatusPage({ searchParams }: Props) {
             <p className="font-semibold mb-1">Need help?</p>
             <p className="text-yellow-700">
               Contact us at{' '}
-              <a href="mailto:info@bpa.org.bd" className="underline font-medium">info@bpa.org.bd</a>
+              <a href={`mailto:${supportEmail}`} className="underline font-medium">{supportEmail}</a>
               {effectiveBookingRef && (
                 <> with booking reference <span className="font-mono font-bold">{effectiveBookingRef}</span></>
               )}.

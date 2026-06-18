@@ -14,6 +14,7 @@ import CommunityCareFundSection from '@/components/sections/CommunityCareFundSec
 import TransparencyTeaserSection from '@/components/sections/TransparencyTeaserSection';
 import PetCensusCTASection from '@/components/sections/PetCensusCTASection';
 import PetSmartSolutionPreviewSection from '@/components/sections/PetSmartSolutionPreviewSection';
+import DonationCTASection from '@/components/donations/DonationCTASection';
 import { getNewsList } from '@/lib/api/news';
 import { getEventsList } from '@/lib/api/events';
 import { getCommitteeMembers } from '@/lib/api/committee';
@@ -130,6 +131,11 @@ export default async function HomePage() {
       />
       <CommunityCareFundSection overview={careFundOverview} zones={zones} />
       <TransparencyTeaserSection />
+      <DonationCTASection
+        title="Help Us Save More Lives"
+        subtitle="Your donation funds vaccines, emergency surgery, daily meals, and rescue operations for animals across Bangladesh. Every contribution is tracked and reported."
+        theme="green"
+      />
       <PetCensusCTASection />
       <MembershipVolunteerSection membership={membership} volunteer={volunteer} />
       <LatestNewsSection items={news} section={section('news')} />

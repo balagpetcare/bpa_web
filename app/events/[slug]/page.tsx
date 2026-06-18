@@ -11,6 +11,7 @@ import { getEventBySlug, getEventsList } from '@/lib/api/events';
 import { getSeoData } from '@/lib/api/seo';
 import { buildMetadata, BASE_URL } from '@/lib/seo';
 import { CalendarDays, MapPin, Users, BanknoteIcon, ArrowLeft, Clock } from 'lucide-react';
+import DonationCTASection from '@/components/donations/DonationCTASection';
 
 export const revalidate = 600;
 export const dynamicParams = true;
@@ -310,6 +311,13 @@ export default async function EventDetailPage({ params }: PageProps) {
           </div>
         </div>
       </div>
+
+      <DonationCTASection
+        title="Enjoy Our Events? Help Fund More"
+        subtitle="BPA events are made possible by our generous donors. Your contribution funds future workshops, vaccination drives, and community care programs."
+        theme="green"
+        compact
+      />
 
       {/* Related events */}
       {related.length > 0 && (

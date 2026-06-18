@@ -16,6 +16,7 @@ import { getSeoData } from '@/lib/api/seo';
 import { getMembershipOverview } from '@/lib/api/community-membership';
 import type { CommunityZonePublic } from '@/types/bpa.types';
 
+import DonationCTASection from '@/components/donations/DonationCTASection';
 import HeroDashboardSection from './components/HeroDashboardSection';
 import BenefitsSection from './components/BenefitsSection';
 import SocialImpactSection from './components/SocialImpactSection';
@@ -293,7 +294,7 @@ export default async function CommunityPetCarePage() {
                 labelBn: 'সাধারণ জিজ্ঞাসা',
                 desc: 'Answers to common questions about contribution and the Care Partner Card.',
               },
-            ].map(({ href, label, labelBn, desc }) => (
+            ].map(({ href, label, labelBn, desc }: { href: string; label: string; labelBn: string; desc: string }) => (
               <Link
                 key={href}
                 href={href}
@@ -309,6 +310,12 @@ export default async function CommunityPetCarePage() {
           </div>
         </div>
       </section>
+
+      <DonationCTASection
+        title="Can't Get the Card? You Can Still Help"
+        subtitle="A direct donation supports the same community clinics, vaccination drives, and rescue programs — no card required. Every Taka makes a difference."
+        theme="navy"
+      />
     </>
   );
 }

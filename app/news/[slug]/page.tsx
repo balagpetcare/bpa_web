@@ -10,6 +10,7 @@ import { getNewsBySlug, getNewsList } from '@/lib/api/news';
 import { getSeoData } from '@/lib/api/seo';
 import { buildMetadata, BASE_URL } from '@/lib/seo';
 import { CalendarDays, User, Tag, ArrowLeft } from 'lucide-react';
+import DonationCTASection from '@/components/donations/DonationCTASection';
 import { sanitizeCmsHtml } from '@/lib/utils/sanitize';
 
 export const revalidate = 600;
@@ -202,6 +203,13 @@ export default async function NewsArticlePage({ params }: PageProps) {
           </div>
         </div>
       </article>
+
+      <DonationCTASection
+        title="Support Animal Welfare in Bangladesh"
+        subtitle="BPA's work is possible because of people like you. Make a secure donation today and help fund rescue, treatment, and care for animals across Bangladesh."
+        theme="navy"
+        compact
+      />
 
       {/* Related articles */}
       {related.length > 0 && (

@@ -82,9 +82,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+import { AuthProvider } from '@/context/AuthContext';
+
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const settings = await getPublicSiteSettings({
+    next: { revalidate: 3600 },
+  } as RequestInit).catch(() => null);
+
   return (
     <html
       lang="en"
@@ -93,15 +99,17 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-white text-(--bpa-navy)">
         {/* GTM noscript iframe sits first inside <body> per Google's spec */}
         <GoogleTagManager />
-        <OrganizationJsonLd />
+        <OrganizationJsonLd settings={settings} />
         {/* GA4 direct snippet — omit NEXT_PUBLIC_GA_ID if GTM fires GA4 to avoid double-counting */}
         <GoogleAnalytics />
         {/* Meta Pixel is managed via GTM — no direct snippet here */}
         {/* Fires page_view on every App Router client-side navigation */}
         <AnalyticsPageView />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </AuthProvider>
         <BackToTopButton />
       </body>
     </html>

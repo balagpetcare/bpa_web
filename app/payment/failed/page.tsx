@@ -4,6 +4,7 @@ import { XCircle, AlertCircle, Download, Phone, Mail, Search } from 'lucide-reac
 import { normalizePaymentParams } from '@/lib/utils/eps-params';
 import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 import { getValidationSlipUrl } from '@/lib/utils/api-url';
+import { getPublicSiteSettings, type PublicSiteSettings } from '@/lib/api/site-settings';
 
 export const metadata: Metadata = { title: 'Payment Failed', robots: { index: false, follow: false } };
 
@@ -20,7 +21,11 @@ interface Props {
 
 // ─── Contact block — shared between both views ────────────────────
 
-function ContactBlock({ urgent }: { urgent?: boolean }) {
+function ContactBlock({ settings, urgent }: { settings: PublicSiteSettings | null; urgent?: boolean }) {
+  const displayEmail = settings?.contactEmail || settings?.supportEmail || settings?.generalEmail || 'info@bpa.org.bd';
+  const displayPhone = settings?.primaryPhone || settings?.supportPhone || settings?.officialPhone || '01575008300';
+  const displayPhone2 = settings?.secondaryPhone || settings?.emergencyPhone || null;
+
   return (
     <div className={`rounded-xl p-5 text-left mb-5 ${urgent ? 'bg-red-50 border border-red-200' : 'bg-yellow-50 border border-yellow-200'}`}>
       <p className={`font-bold mb-1 ${urgent ? 'text-red-900' : 'text-yellow-900'}`}>
@@ -33,26 +38,28 @@ function ContactBlock({ urgent }: { urgent?: boolean }) {
       </p>
       <div className={`space-y-2 text-sm ${urgent ? 'text-red-900' : 'text-yellow-900'}`}>
         <a
-          href="mailto:info@bpa.org.bd"
+          href={`mailto:${displayEmail}`}
           className="flex items-center gap-2 font-medium hover:underline"
         >
           <Mail size={14} />
-          info@bpa.org.bd
+          {displayEmail}
         </a>
         <a
-          href="tel:01575008300"
+          href={`tel:${displayPhone.replace(/\s/g, '')}`}
           className="flex items-center gap-2 font-medium hover:underline"
         >
           <Phone size={14} />
-          01575008300
+          {displayPhone}
         </a>
-        <a
-          href="tel:01701022274"
-          className="flex items-center gap-2 font-medium hover:underline"
-        >
-          <Phone size={14} />
-          01701022274
-        </a>
+        {displayPhone2 && (
+          <a
+            href={`tel:${displayPhone2.replace(/\s/g, '')}`}
+            className="flex items-center gap-2 font-medium hover:underline"
+          >
+            <Phone size={14} />
+            {displayPhone2}
+          </a>
+        )}
       </div>
     </div>
   );
@@ -63,11 +70,14 @@ function ContactBlock({ urgent }: { urgent?: boolean }) {
 function PaymentUnderReviewView({
   slipRef,
   displayRef,
+  settings,
 }: {
   slipRef: string | null;
   displayRef: string | null;
+  settings: PublicSiteSettings | null;
 }) {
   const slipUrl = slipRef ? getValidationSlipUrl(slipRef) : null;
+  const displayEmail = settings?.contactEmail || settings?.supportEmail || settings?.generalEmail || 'info@bpa.org.bd';
 
   return (
     <section className="min-h-[60vh] flex items-center justify-center py-20">
@@ -153,12 +163,12 @@ function PaymentUnderReviewView({
           </Link>
         )}
 
-        <ContactBlock urgent />
+        <ContactBlock settings={settings} urgent />
 
         {/* Secondary actions */}
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
-            href="mailto:info@bpa.org.bd"
+            href={`mailto:${displayEmail}`}
             className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-6 py-3 text-sm bg-amber-100 text-amber-900 hover:bg-amber-200"
           >
             <Mail size={15} />
@@ -183,13 +193,16 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
   const raw = await searchParams;
   const { txn, ref, reason, booking } = normalizePaymentParams(raw);
 
+  const settings = await getPublicSiteSettings().catch(() => null);
+  const displayEmail = settings?.contactEmail || settings?.supportEmail || settings?.generalEmail || 'info@bpa.org.bd';
+
   const displayRef = booking ?? txn ?? ref;
   const isMissingTxn = reason === 'missing_txn';
 
   // For missing_txn: show the review UI — any available ref can resolve the slip
   if (isMissingTxn) {
     const slipRef = booking ?? ref ?? txn;
-    return <PaymentUnderReviewView slipRef={slipRef} displayRef={displayRef} />;
+    return <PaymentUnderReviewView slipRef={slipRef} displayRef={displayRef} settings={settings} />;
   }
 
   // ── Normal failure/cancellation UI ───────────────────────────────
@@ -266,7 +279,7 @@ export default async function PaymentFailedPage({ searchParams }: Props) {
           </div>
         )}
 
-        <ContactBlock />
+        <ContactBlock settings={settings} />
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           {booking && isUnknownOutcome ? (

@@ -24,6 +24,11 @@ export function getValidationSlipUrl(bookingRef: string): string {
   return `${getApiOrigin()}/api/v1/public/bookings/${encodeURIComponent(bookingRef)}/validation-slip.pdf`;
 }
 
+export function getDonationReceiptPdfUrl(referenceNo: string, lang?: 'en' | 'bn'): string {
+  const base = `${getApiOrigin()}/api/v1/public/donations/receipt/${encodeURIComponent(referenceNo)}/pdf`;
+  return lang ? `${base}?lang=${lang}` : base;
+}
+
 export function getPublicApiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${getApiOrigin()}/api/v1${normalizedPath}`;

@@ -4,6 +4,7 @@ export interface PublicSiteSettings {
   // Identity
   siteName: string;
   siteTagline: string | null;
+  tagline: string | null;
   organizationName: string;
   // Contact
   officialPhone: string | null;
@@ -12,11 +13,16 @@ export interface PublicSiteSettings {
   whatsappNumber: string | null;
   generalEmail: string | null;
   supportEmail: string | null;
+  contactEmail: string | null;
+  vaccinationEmail: string | null;
+  primaryPhone: string | null;
+  secondaryPhone: string | null;
   officeHours: string | null;
   // Address
   officeAddress: string | null;
   addressLine1: string | null;
   addressLine2: string | null;
+  addressLine: string | null;
   area: string | null;
   city: string | null;
   postalCode: string | null;
@@ -27,8 +33,13 @@ export interface PublicSiteSettings {
   primaryLogoUrl: string | null;
   secondaryLogoUrl: string | null;
   faviconUrl: string | null;
+  websiteUrl: string | null;
+  legalName: string | null;
   defaultMetaTitle: string | null;
   defaultMetaDescription: string | null;
+  receiptFooterNote: string | null;
+  donationReceiptTermsBn: string | null;
+  donationReceiptTermsEn: string | null;
   // Social
   facebookUrl: string | null;
   youtubeUrl: string | null;
@@ -39,9 +50,10 @@ export interface PublicSiteSettings {
   emergencyNotice: string | null;
 }
 
-const DEFAULT_SETTINGS: PublicSiteSettings = {
+export const DEFAULT_SETTINGS: PublicSiteSettings = {
   siteName: 'Bangladesh Pet Association',
   siteTagline: null,
+  tagline: null,
   organizationName: 'Bangladesh Pet Association',
   officialPhone: null,
   supportPhone: null,
@@ -49,10 +61,15 @@ const DEFAULT_SETTINGS: PublicSiteSettings = {
   whatsappNumber: null,
   generalEmail: null,
   supportEmail: null,
+  contactEmail: null,
+  vaccinationEmail: null,
+  primaryPhone: null,
+  secondaryPhone: null,
   officeHours: null,
   officeAddress: null,
   addressLine1: null,
   addressLine2: null,
+  addressLine: null,
   area: null,
   city: null,
   postalCode: null,
@@ -62,8 +79,13 @@ const DEFAULT_SETTINGS: PublicSiteSettings = {
   primaryLogoUrl: null,
   secondaryLogoUrl: null,
   faviconUrl: null,
+  websiteUrl: null,
+  legalName: null,
   defaultMetaTitle: null,
   defaultMetaDescription: null,
+  receiptFooterNote: null,
+  donationReceiptTermsBn: null,
+  donationReceiptTermsEn: null,
   facebookUrl: null,
   youtubeUrl: null,
   linkedinUrl: null,
@@ -151,3 +173,5 @@ export function addressLines(s: PublicSiteSettings): string[] {
   if (s.officeAddress) return s.officeAddress.split('\n').map(l => l.trim()).filter(Boolean);
   return [];
 }
+
+

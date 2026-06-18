@@ -145,6 +145,7 @@ export async function getDonationStatus(referenceNo: string, options?: RequestIn
     createdAt: string;
     paidAt?: string;
     donorName: string;
+    donorCountry?: string;
     campaignTitle: string | null;
     purposeTitle: string | null;
   };

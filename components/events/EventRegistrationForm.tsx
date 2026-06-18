@@ -54,6 +54,7 @@ export default function EventRegistrationForm({
       const res = await fetch(`${API_ORIGIN}/api/v1/events/public/${eventId}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(data),
       });
       const json = await res.json();

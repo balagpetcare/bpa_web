@@ -30,13 +30,14 @@ export default async function Footer() {
   const footerLogoUrl = s?.secondaryLogoUrl ?? null;
   const footerLogoFallbackUrl = !footerLogoUrl ? (s?.primaryLogoUrl ?? null) : null;
 
-  const contactPhone = s?.officialPhone ?? s?.supportPhone ?? null;
+  const contactPhone = s?.primaryPhone ?? s?.officialPhone ?? s?.supportPhone ?? null;
   const contactEmail =
+    s?.contactEmail ??
     s?.supportEmail ??
     s?.generalEmail ??
     footer?.email ??
-    'vaccination2026@bangladeshpetassociation.com';
-  const contactAddress = s ? formatAddress(s) : null;
+    null;
+  const contactAddress = s ? (s.addressLine || formatAddress(s)) : null;
   const officeHours = s?.officeHours || '9:00 AM - 6:00 PM (Sat-Thu)';
 
   const socialLinks = [
