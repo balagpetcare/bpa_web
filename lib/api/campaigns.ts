@@ -57,7 +57,11 @@ export async function getBookingByNumber(bookingNumber: string, fetchOptions?: R
 }
 
 export async function createGuestPets(
-  ownerInfo: { ownerName: string; mobile: string; email?: string; address?: string },
+  ownerInfo: {
+    ownerName: string; mobile: string; email?: string; address?: string;
+    divisionId?: string; districtId?: string; upazilaId?: string;
+    unionId?: string; cityCorporationId?: string; cityZoneId?: string; wardId?: string;
+  },
   pets: GuestPet[],
 ): Promise<GuestPetBatchResponse> {
   const res = await apiPost<GuestPetBatchResponse>('/public/pets/guest', { ...ownerInfo, pets });

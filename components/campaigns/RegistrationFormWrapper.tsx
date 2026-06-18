@@ -10,6 +10,7 @@ import {
 import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
+import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
 import { getCampaignBySlug, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
 import { ApiError } from '@/lib/api';
 import { normalizeCampaignPricing, formatMoney } from '@/lib/utils/format';
@@ -366,6 +367,7 @@ export default function RegistrationFormWrapper() {
 
   // Form data
   const [owner, setOwner] = useState<OwnerInfo>({ name: '', mobile: '', email: '', address: '' });
+  const [ownerLocationValue, setOwnerLocationValue] = useState<LocationValue>({});
   const [pets, setPets] = useState<PetInfo[]>([emptyPet()]);
 
   useEffect(() => {
@@ -518,7 +520,7 @@ export default function RegistrationFormWrapper() {
       }));
 
       const guestData = await createGuestPets(
-        { ownerName: owner.name, mobile: owner.mobile, email: owner.email || undefined, address: owner.address || undefined },
+        { ownerName: owner.name, mobile: owner.mobile, email: owner.email || undefined, address: owner.address || undefined, ...ownerLocationValue },
         normalizedPets.map(({ _id: _unused, ...p }) => ({
           name: p.name, petType: p.petType, gender: p.gender,
           approxAge: p.approxAge, breed: p.breed || undefined, color: p.color, weightKg: p.weightKg,
@@ -1091,6 +1093,16 @@ export default function RegistrationFormWrapper() {
                     )}
                   </div>
                 ))}
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Location (optional)</p>
+                  <LocationSelector
+                    value={ownerLocationValue}
+                    onChange={setOwnerLocationValue}
+                    showUnion
+                    showWard
+                    showAddressLine={false}
+                  />
+                </div>
               </div>
             </div>
           )}
