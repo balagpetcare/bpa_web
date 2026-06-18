@@ -467,6 +467,17 @@ export default async function DonatePage() {
                 </Link>
               ))}
             </div>
+
+            {stories.length > 3 && (
+              <div className="mt-10 text-center">
+                <Link
+                  href="/donations/impact-stories"
+                  className="inline-flex items-center gap-2 text-sm font-bold text-(--bpa-green) hover:underline"
+                >
+                  View All Stories <ArrowRight size={14} />
+                </Link>
+              </div>
+            )}
           </div>
         </section>
       )}
