@@ -146,7 +146,7 @@ export default async function CommunityPetCarePage() {
                   href="/community-pet-care/membership/upgrade"
                   className="inline-flex items-center gap-2 border border-(--bpa-green) text-(--bpa-green) px-6 py-3 rounded-xl font-semibold hover:bg-green-50 transition-colors"
                 >
-                  Upgrade Membership <ChevronRight size={16} />
+                  Upgrade Care Partner Card <ChevronRight size={16} />
                 </Link>
               </div>
             </div>

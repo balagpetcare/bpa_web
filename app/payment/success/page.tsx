@@ -86,13 +86,30 @@ export default async function PaymentSuccessPage({ searchParams }: Props) {
           >
             Return to Home
           </Link>
-          <Link
-            href="/membership"
-            className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-7 py-3.5 text-base border-2 border-(--bpa-green) text-(--bpa-green) hover:bg-(--bpa-navy)"
-          >
-            Membership Info
-          </Link>
+          {booking ? (
+            <Link
+              href="/care-partner-card"
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-7 py-3.5 text-base border-2 border-(--bpa-green) text-(--bpa-green)"
+            >
+              Check Care Partner Card
+            </Link>
+          ) : (
+            <Link
+              href="/membership/lookup"
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors px-7 py-3.5 text-base border-2 border-(--bpa-green) text-(--bpa-green)"
+            >
+              View Care Partner Card
+            </Link>
+          )}
         </div>
+
+        {!booking && txn && (
+          <p className="mt-4 text-xs text-gray-400 text-center">
+            If this was a Community Care Partner Card purchase, visit{' '}
+            <Link href="/membership/lookup" className="text-(--bpa-green) underline">membership lookup</Link>{' '}
+            to view and download your card.
+          </p>
+        )}
       </div>
     </section>
   );
