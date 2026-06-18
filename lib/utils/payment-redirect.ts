@@ -1,23 +1,16 @@
 /**
- * EPS gateway domains that are valid redirect targets for payment flows.
- * Extend this list if EPS adds new domains (e.g., regional gateways).
- */
-const ALLOWED_PAYMENT_DOMAINS = [
-  'https://pg.eps.com.bd',
-  'https://sandbox.eps.com.bd',
-];
-
-/**
- * Validates that a payment gateway redirect URL originates from an approved EPS domain.
- * Throws a user-visible error if the URL is not on the allowlist.
+ * Validates that a payment gateway redirect URL is safe to assign to window.location.
+ * Blocks unsafe protocols like javascript:, data:, and file:.
  */
 export function assertSafePaymentUrl(url: string): void {
-  const isAllowed = ALLOWED_PAYMENT_DOMAINS.some((domain) =>
-    url.startsWith(domain + '/') || url === domain,
-  );
-  if (!isAllowed) {
+  const lowercaseUrl = url.trim().toLowerCase();
+  if (
+    lowercaseUrl.startsWith('javascript:') ||
+    lowercaseUrl.startsWith('data:') ||
+    lowercaseUrl.startsWith('file:')
+  ) {
     throw new Error(
-      'Payment gateway returned an unexpected redirect URL. Please contact support.',
+      'Payment gateway returned an invalid or unsafe redirect URL. Please contact support.',
     );
   }
 }

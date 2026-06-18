@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -47,9 +48,11 @@ interface Props {
   strikePrice: number | null;
   isOfferActive: boolean;
   legalDisclaimer?: string | null;
+  paymentMode?: 'eps' | 'manual';
 }
 
-export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice, isOfferActive, legalDisclaimer }: Props) {
+export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice, isOfferActive, legalDisclaimer, paymentMode = 'manual' }: Props) {
+  const router = useRouter();
   const [zones, setZones] = useState<CommunityZonePublic[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [redirecting, setRedirecting] = useState(false);
@@ -94,19 +97,20 @@ export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice
         preferredZoneId: data.preferredZoneId || undefined,
       });
 
-      if (result.redirectUrl) {
+      if (result.paymentMode === 'eps' && result.redirectUrl) {
         assertSafePaymentUrl(result.redirectUrl);
         // Store purchaseId so we can retrieve it on success page
         if (typeof window !== 'undefined') {
           try {
-            sessionStorage.setItem(`bpa_purchase_${result.merchantTxnId}`, result.purchaseId);
+            sessionStorage.setItem(`bpa_purchase_${result.merchantTxnId}`, result.purchaseReference || result.purchaseId);
           } catch { /* sessionStorage unavailable */ }
         }
         setRedirecting(true);
         window.location.assign(result.redirectUrl);
       } else {
-        // Manual MFS payment mode
-        setPendingPurchase(result);
+        // Manual payment mode - redirect to status page
+        const ref = result.purchaseReference || result.purchaseId;
+        router.push(`/community-pet-care/payment/status?ref=${ref}`);
       }
     } catch (err) {
       setRedirecting(false);
@@ -318,7 +322,9 @@ export default function MembershipPurchaseForm({ tier, displayPrice, strikePrice
       </Button>
 
       <p className="text-xs text-center text-gray-400">
-        You will be securely redirected to the EPS payment gateway. Card is issued automatically after payment verification.
+        {paymentMode === 'eps'
+          ? 'You will be securely redirected to the EPS payment gateway. Card is issued automatically after payment verification.'
+          : 'Submit your payment details and check your membership status after verification.'}
       </p>
     </form>
   );

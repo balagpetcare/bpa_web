@@ -1,6 +1,6 @@
 import type { ApiResponse } from '@/types/bpa.types';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export class ApiError extends Error {
   constructor(
@@ -20,6 +20,7 @@ async function request<T>(
   const url = `${BASE_URL}/api/v1${path}`;
   const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json', ...options?.headers },
+    credentials: 'include',
     ...options,
   });
 

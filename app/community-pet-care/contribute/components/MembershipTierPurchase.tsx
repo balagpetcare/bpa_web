@@ -72,6 +72,7 @@ export default async function MembershipTierPurchase({ tierSlug }: Props) {
               strikePrice={tier.strikePrice}
               isOfferActive={tier.isOfferActiveForTier}
               legalDisclaimer={overview.program?.legalDisclaimer}
+              paymentMode={program.paymentMode}
             />
           </div>
 

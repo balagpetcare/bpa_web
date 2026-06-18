@@ -13,6 +13,7 @@ export interface NormalizedProgram {
   priceAfterOffer: 'USE_REGULAR_PRICE' | 'HIDE_TIER' | 'SHOW_EXPIRED_MESSAGE';
   cardValidityLabel: string;
   isActive: boolean;
+  paymentMode?: 'eps' | 'manual';
 }
 
 export interface NormalizedTier extends MembershipTierPublic {
@@ -53,6 +54,7 @@ export function normalizeProgram(program: MembershipOverview['program']): Normal
     priceAfterOffer: (program?.priceAfterOffer as 'USE_REGULAR_PRICE' | 'HIDE_TIER' | 'SHOW_EXPIRED_MESSAGE') ?? 'USE_REGULAR_PRICE',
     cardValidityLabel: program?.cardValidityLabel ?? '5 Years Validity',
     isActive: true, // Defaulting to true as we are seeing it
+    paymentMode: (program as any)?.paymentMode ?? 'manual',
   };
 }
 

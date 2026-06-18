@@ -211,6 +211,10 @@ export interface InitiatePurchaseResponse {
   tierName: string;
   paymentMode?: 'eps' | 'manual';
   mfs?: MfsInstructions;
+  purchaseReference?: string;
+  paymentReference?: string;
+  statusUrl?: string;
+  message?: string;
 }
 
 export interface PurchaseStatusCard {
@@ -384,4 +388,54 @@ export function getPurchaseStatus(purchaseId: string): Promise<PurchaseStatusRes
 export function getZoneDemand(options?: RequestInit): Promise<ZoneDemandItem[]> {
   return apiFetch<ZoneDemandItem[]>('/public/community-membership/zone-demand', options)
     .then((r) => r.data);
+}
+
+export interface MembershipCardVerifyResult {
+  valid: boolean;
+  cardNumber: string | null;
+  status: string;
+  memberName: string | null;
+  tierName: string | null;
+  tierNameBn: string | null;
+  petLimit: number | null;
+  issuedAt: string | null;
+  expiresAt: string | null;
+}
+
+export function verifyMembershipCard(token: string, options?: RequestInit): Promise<MembershipCardVerifyResult> {
+  return apiFetch<MembershipCardVerifyResult>(
+    `/public/community-membership/verify?token=${encodeURIComponent(token)}`,
+    options,
+  ).then((r) => r.data);
+}
+
+export interface MembershipPublicStatus {
+  reference: string;
+  status: string;
+  paymentStatus: string;
+  cardIssued: boolean;
+  tierName: string;
+  tierNameBn: string;
+  amount: number;
+  regularPrice: number;
+  launchPrice: number | null;
+  currency: string;
+  fullName: string;
+  mobileMasked: string;
+  emailMasked: string | null;
+  preferredZone: string | null;
+  numberOfPets: number;
+  validFrom: string | null;
+  validUntil: string | null;
+  cardNumber: string | null;
+  verificationUrl: string | null;
+  receiptPdfUrl: string;
+  cardPdfUrl: string | null;
+}
+
+export function getPublicMembershipStatus(reference: string, options?: RequestInit): Promise<MembershipPublicStatus> {
+  return apiFetch<MembershipPublicStatus>(
+    `/public/memberships/${encodeURIComponent(reference)}`,
+    options,
+  ).then((r) => r.data);
 }
