@@ -431,6 +431,12 @@ export interface MembershipPublicStatus {
   verificationUrl: string | null;
   receiptPdfUrl: string;
   cardPdfUrl: string | null;
+  guidePdfUrl: string | null;
+  welcomePackPdfUrl: string | null;
+  smsStatus: 'sent' | 'queued' | 'failed' | 'not_sent';
+  smsSentAt: string | null;
+  supportPhone: string;
+  supportEmail: string;
 }
 
 export function getPublicMembershipStatus(reference: string, options?: RequestInit): Promise<MembershipPublicStatus> {

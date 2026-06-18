@@ -14,6 +14,13 @@ interface Props {
 export default async function PaymentSuccessPage({ searchParams }: Props) {
   const raw = await searchParams;
   const { txn, booking } = normalizePaymentParams(raw);
+  const ref = (raw.ref || raw.reference || raw.paymentRef || raw.txn || txn || '') as string;
+  const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+  if (ref && (isUuid(ref) || !booking)) {
+    const { redirect } = await import('next/navigation');
+    redirect(`/community-pet-care/payment/success?ref=${ref}`);
+  }
 
   const pdfUrl = booking ? getValidationSlipUrl(booking) : null;
 

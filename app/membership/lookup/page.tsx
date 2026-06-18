@@ -90,6 +90,8 @@ function MembershipLookupContent() {
   const apiOrigin = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').replace('/api/v1', '');
   const receiptPdfUrl = purchaseId ? `${apiOrigin}/api/v1/public/memberships/${purchaseId}/receipt.pdf` : null;
   const cardPdfUrl = purchaseId ? `${apiOrigin}/api/v1/public/memberships/${purchaseId}/card.pdf` : null;
+  const guidePdfUrl = purchaseId ? `${apiOrigin}/api/v1/public/memberships/${purchaseId}/guide.pdf` : null;
+  const welcomePackPdfUrl = purchaseId ? `${apiOrigin}/api/v1/public/memberships/${purchaseId}/welcome-pack.pdf` : null;
 
   return (
     <>
@@ -217,34 +219,65 @@ function MembershipLookupContent() {
               </div>
 
               {/* Purchase status */}
-              {statusResult && statusResult.status !== 'paid' && (
+              {statusResult && statusResult.status !== 'paid' && statusResult.status !== 'failed' && statusResult.status !== 'cancelled' && (
                 <div className={`rounded-xl border px-4 py-3 text-sm ${STATUS_COLORS[statusResult.status] ?? 'text-gray-700 bg-gray-50 border-gray-200'}`}>
                   <strong>Purchase Status:</strong>{' '}
                   {statusResult.status === 'pending_payment'
-                    ? 'Payment pending. If you have already paid via MFS, please wait for verification or contact support.'
+                    ? 'Payment verification pending. If you have already paid via MFS, please wait for verification or contact support.'
                     : statusResult.status}
+                </div>
+              )}
+
+              {statusResult && (statusResult.status === 'failed' || statusResult.status === 'cancelled') && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 text-left">
+                  <strong>Verification Error:</strong> Your payment verification failed or request was cancelled. Please contact support at <a href="mailto:info@bangladeshpetassociation.com" className="underline">info@bangladeshpetassociation.com</a> or Helpline: 01575008300 for assistance.
                 </div>
               )}
 
               {/* Download card and receipt */}
               {isPaid && purchaseId && (
-                <div className="flex flex-col gap-3 w-full">
+                <div className="space-y-3 w-full">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block text-left">Downloads / ডাউনলোড করুন</span>
+                  
                   <a
-                    href={receiptPdfUrl!}
+                    href={welcomePackPdfUrl!}
+                    download
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
+                    className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-extrabold px-6 py-3.5 rounded-xl hover:opacity-95 transition-opacity text-sm shadow-sm w-full"
                   >
-                    <Download size={16} /> Download Official Receipt (PDF)
+                    <Download size={16} /> Download Welcome Pack PDF (Combined)
                   </a>
-                  <a
-                    href={cardPdfUrl!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 w-full bg-(--bpa-navy) text-white font-bold px-6 py-3.5 rounded-xl hover:opacity-90 transition-opacity text-sm"
-                  >
-                    <Download size={16} /> Download Digital Card (PDF)
-                  </a>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <a
+                      href={cardPdfUrl!}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 bg-sky-950 text-white font-bold px-3 py-2.5 rounded-lg hover:bg-sky-900 transition-colors text-xs text-center"
+                    >
+                      <CreditCard size={12} className="inline mr-1" /> Card
+                    </a>
+                    <a
+                      href={receiptPdfUrl!}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 bg-gray-800 text-white font-bold px-3 py-2.5 rounded-lg hover:bg-gray-700 transition-colors text-xs text-center"
+                    >
+                      <Download size={12} className="inline mr-1" /> Receipt
+                    </a>
+                    <a
+                      href={guidePdfUrl!}
+                      download
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1 bg-gray-100 text-gray-800 font-bold px-3 py-2.5 rounded-lg hover:bg-gray-200 transition-colors text-xs text-center border border-gray-200"
+                    >
+                      <Download size={12} className="inline mr-1" /> Guide
+                    </a>
+                  </div>
                 </div>
               )}
 
@@ -252,7 +285,7 @@ function MembershipLookupContent() {
               {qrToken && cardStatus === 'active' && (
                 <Link
                   href={`/verify/membership-card/${encodeURIComponent(qrToken)}`}
-                  className="flex items-center justify-center gap-2 w-full border-2 border-(--bpa-green) text-(--bpa-green) font-bold px-6 py-3.5 rounded-xl hover:bg-(--bpa-green-light) transition-colors text-sm"
+                  className="flex items-center justify-center gap-2 w-full border-2 border-(--bpa-green) text-(--bpa-green) font-bold px-6 py-3.5 rounded-xl hover:bg-green-50 transition-colors text-sm"
                 >
                   <ShieldCheck size={16} /> Verify Card QR
                 </Link>

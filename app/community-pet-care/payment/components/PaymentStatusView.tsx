@@ -102,6 +102,8 @@ export default function PaymentStatusView({ reference: ref, initialType = 'statu
   const cleanBaseUrl = BASE_URL.replace(/\/$/, '');
   const receiptUrl = `${cleanBaseUrl}/api/v1/public/memberships/${ref}/receipt.pdf`;
   const cardUrl = `${cleanBaseUrl}/api/v1/public/memberships/${ref}/card.pdf`;
+  const guideUrl = `${cleanBaseUrl}/api/v1/public/memberships/${ref}/guide.pdf`;
+  const welcomePackUrl = `${cleanBaseUrl}/api/v1/public/memberships/${ref}/welcome-pack.pdf`;
 
   return (
     <div className="max-w-xl w-full mx-auto px-4 py-12">
@@ -113,13 +115,43 @@ export default function PaymentStatusView({ reference: ref, initialType = 'statu
             <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6 border border-green-200">
               <CheckCircle size={44} className="text-(--bpa-green)" />
             </div>
-            <h1 className="text-3xl font-extrabold text-(--bpa-navy) mb-2">Payment Successful!</h1>
-            <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
-              Thank you for becoming a BPA Care Partner. Your contribution funds community clinic access in your zone.
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-(--bpa-navy) mb-2">
+              Your BPA Care Partner Card is Ready
+              <span className="block text-lg font-semibold text-gray-500 mt-1">আপনার BPA Care Partner Card প্রস্তুত</span>
+            </h1>
+            <p className="text-gray-500 text-sm mb-6 max-w-md mx-auto leading-relaxed">
+              Your payment has been verified and your digital card has been issued.
+              <span className="block text-xs text-gray-400 mt-1">আপনার পেমেন্ট যাচাই সম্পন্ন হয়েছে এবং ডিজিটাল কার্ড ইস্যু করা হয়েছে।</span>
             </p>
 
+            {/* SMS Status Alert */}
+            {membership?.smsStatus && (
+              <div className={`p-4 rounded-2xl border text-sm text-left mb-6 flex items-start gap-3 ${
+                membership.smsStatus === 'sent' ? 'bg-green-50/80 border-green-200 text-green-800' :
+                membership.smsStatus === 'queued' ? 'bg-sky-50 border-sky-200 text-sky-800' :
+                membership.smsStatus === 'failed' ? 'bg-amber-50 border-amber-200 text-amber-800' :
+                'bg-gray-50 border-gray-150 text-gray-700'
+              }`}>
+                <CheckCircle size={18} className="shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold block text-xs uppercase tracking-wider mb-0.5">
+                    {membership.smsStatus === 'sent' && 'Confirmation SMS Sent'}
+                    {membership.smsStatus === 'queued' && 'SMS Sending In Progress'}
+                    {membership.smsStatus === 'failed' && 'SMS Delivery Unsuccessful'}
+                    {membership.smsStatus === 'not_sent' && 'SMS Pending'}
+                  </span>
+                  <span className="text-xs leading-normal">
+                    {membership.smsStatus === 'sent' && 'Confirmation SMS has been sent to your registered mobile number.'}
+                    {membership.smsStatus === 'queued' && 'SMS confirmation is being sent.'}
+                    {membership.smsStatus === 'failed' && 'SMS could not be sent automatically. Your card is still active; please download your PDFs below.'}
+                    {membership.smsStatus === 'not_sent' && 'SMS confirmation is pending.'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             {/* Details Card */}
-            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-8 text-left space-y-4">
+            <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-6 text-left space-y-4">
               <div className="border-b border-gray-200/60 pb-3 flex justify-between items-center">
                 <div>
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Reference ID</span>
@@ -161,38 +193,80 @@ export default function PaymentStatusView({ reference: ref, initialType = 'statu
               </div>
             </div>
 
+            {/* Rules Summary */}
+            <div className="bg-amber-50/50 border border-amber-100 rounded-2xl p-5 mb-6 text-left text-xs leading-relaxed text-gray-700">
+              <h3 className="font-bold text-sm text-(--bpa-navy) mb-2 flex items-center gap-1.5">
+                <AlertTriangle size={15} className="text-amber-500" />
+                Important Membership Rules & Guide / সদস্য নিয়মাবলী
+              </h3>
+              <ul className="list-disc pl-4 space-y-1.5">
+                <li><strong>Validity:</strong> Card is valid for 5 years from issue date. (মেয়াদকাল ইস্যুর তারিখ থেকে ৫ বছর।)</li>
+                <li><strong>Pet Limit:</strong> Up to {membership?.numberOfPets} registered pets covered. (পোষা প্রাণীর কাভারেজ সর্বোচ্চ {membership?.numberOfPets} টি।)</li>
+                <li><strong>Usage:</strong> Show QR or card number at clinics to claim benefits. (সুবিধা পেতে ক্লিনিকে কিউআর বা কার্ড নম্বর প্রদর্শন করুন।)</li>
+                <li><strong>Final Disclaimer:</strong> BPA Care Card is a service benefit card only, not an investment or financial return vehicle. (এটি একটি সেবা সুবিধা কার্ড মাত্র, কোনো অংশীদারিত্ব বা আর্থিক বিনিয়োগ নয়।)</li>
+              </ul>
+            </div>
+
             {/* Document Download Options */}
-            <div className="flex flex-col gap-3 mb-6">
+            <div className="space-y-3 mb-6">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block text-left">Downloads / ডাউনলোড করুন</span>
+              
               <a
-                href={receiptUrl}
+                href={welcomePackUrl}
                 download
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-bold px-6 py-3.5 rounded-2xl hover:opacity-95 transition-opacity text-sm"
+                className="flex items-center justify-center gap-2 bg-(--bpa-green) text-white font-extrabold px-6 py-4 rounded-2xl hover:opacity-95 transition-opacity text-sm shadow-md w-full"
               >
-                <FileText size={16} />
-                Download Official Receipt PDF
+                <FileText size={18} />
+                Download Welcome Pack PDF (Combined)
               </a>
-              <a
-                href={cardUrl}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-(--bpa-navy) text-white font-bold px-6 py-3.5 rounded-2xl hover:opacity-95 transition-opacity text-sm"
-              >
-                <CreditCard size={16} />
-                Download Digital Card PDF
-              </a>
-              {membership?.verificationUrl && (
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <a
-                  href={membership.verificationUrl}
+                  href={cardUrl}
+                  download
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 text-xs text-(--bpa-green) font-bold py-2 hover:underline"
+                  className="flex items-center justify-center gap-1.5 bg-sky-950 text-white font-bold px-4 py-3 rounded-xl hover:bg-sky-900 transition-colors text-xs"
                 >
-                  <ExternalLink size={12} />
-                  View/Verify Digital Card
+                  <CreditCard size={14} />
+                  Digital Card
                 </a>
+                <a
+                  href={receiptUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 bg-gray-800 text-white font-bold px-4 py-3 rounded-xl hover:bg-gray-700 transition-colors text-xs"
+                >
+                  <FileText size={14} />
+                  Receipt
+                </a>
+                <a
+                  href={guideUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1.5 bg-gray-100 text-gray-800 font-bold px-4 py-3 rounded-xl hover:bg-gray-200 transition-colors text-xs border border-gray-200"
+                >
+                  <FileText size={14} />
+                  Member Guide
+                </a>
+              </div>
+
+              {membership?.verificationUrl && (
+                <div className="pt-2">
+                  <a
+                    href={membership.verificationUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-1.5 text-xs text-(--bpa-green) font-bold py-2 hover:underline"
+                  >
+                    <ExternalLink size={12} />
+                    View/Verify Digital Card
+                  </a>
+                </div>
               )}
             </div>
           </>
