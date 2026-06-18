@@ -7,9 +7,12 @@ import ImpactStoryGrid from '@/components/donations/ImpactStoryGrid';
 import DonorWall from '@/components/donations/DonorWall';
 import DonationCTASection from '@/components/donations/DonationCTASection';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+type PageProps = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
   try {
-    const campaign = await getDonationCampaign(params.slug);
+    const campaign = await getDonationCampaign(slug);
     return {
       title: `${campaign.titleEn} | BPA Campaign`,
       description: campaign.descriptionEn,
@@ -21,10 +24,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export const revalidate = 60;
 
-export default async function CampaignDetailPage({ params }: { params: { slug: string } }) {
+export default async function CampaignDetailPage({ params }: PageProps) {
+  const { slug } = await params;
   let campaign;
   try {
-    campaign = await getDonationCampaign(params.slug);
+    campaign = await getDonationCampaign(slug);
   } catch (e) {
     notFound();
   }

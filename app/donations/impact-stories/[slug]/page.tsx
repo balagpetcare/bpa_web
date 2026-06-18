@@ -4,9 +4,12 @@ import { notFound } from 'next/navigation';
 import { Heart, Calendar, MapPin, Tag, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+type PageProps = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
   try {
-    const story = await getDonationImpactStory(params.slug);
+    const story = await getDonationImpactStory(slug);
     return {
       title: `${story.titleEn} | Impact Story | BPA`,
       description: story.shortDescriptionEn || story.fullStoryEn.substring(0, 160),
@@ -18,10 +21,11 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 
 export const revalidate = 60;
 
-export default async function ImpactStoryPage({ params }: { params: { slug: string } }) {
+export default async function ImpactStoryPage({ params }: PageProps) {
+  const { slug } = await params;
   let story;
   try {
-    story = await getDonationImpactStory(params.slug);
+    story = await getDonationImpactStory(slug);
   } catch (e) {
     notFound();
   }
