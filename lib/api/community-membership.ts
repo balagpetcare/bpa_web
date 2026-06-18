@@ -433,7 +433,7 @@ export interface MembershipPublicStatus {
   cardPdfUrl: string | null;
   guidePdfUrl: string | null;
   welcomePackPdfUrl: string | null;
-  smsStatus: 'sent' | 'queued' | 'failed' | 'not_sent';
+  smsStatus: 'sent' | 'delivered' | 'queued' | 'sending' | 'failed' | 'not_sent' | 'skipped' | 'cancelled';
   smsSentAt: string | null;
   supportPhone: string;
   supportEmail: string;

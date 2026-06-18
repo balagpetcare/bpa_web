@@ -127,24 +127,24 @@ export default function PaymentStatusView({ reference: ref, initialType = 'statu
             {/* SMS Status Alert */}
             {membership?.smsStatus && (
               <div className={`p-4 rounded-2xl border text-sm text-left mb-6 flex items-start gap-3 ${
-                membership.smsStatus === 'sent' ? 'bg-green-50/80 border-green-200 text-green-800' :
-                membership.smsStatus === 'queued' ? 'bg-sky-50 border-sky-200 text-sky-800' :
+                (membership.smsStatus === 'sent' || membership.smsStatus === 'delivered') ? 'bg-green-50/80 border-green-200 text-green-800' :
+                (membership.smsStatus === 'queued' || membership.smsStatus === 'sending') ? 'bg-sky-50 border-sky-200 text-sky-800' :
                 membership.smsStatus === 'failed' ? 'bg-amber-50 border-amber-200 text-amber-800' :
                 'bg-gray-50 border-gray-150 text-gray-700'
               }`}>
                 <CheckCircle size={18} className="shrink-0 mt-0.5" />
                 <div>
                   <span className="font-bold block text-xs uppercase tracking-wider mb-0.5">
-                    {membership.smsStatus === 'sent' && 'Confirmation SMS Sent'}
-                    {membership.smsStatus === 'queued' && 'SMS Sending In Progress'}
+                    {(membership.smsStatus === 'sent' || membership.smsStatus === 'delivered') && 'Confirmation SMS Sent'}
+                    {(membership.smsStatus === 'queued' || membership.smsStatus === 'sending') && 'SMS Sending In Progress'}
                     {membership.smsStatus === 'failed' && 'SMS Delivery Unsuccessful'}
-                    {membership.smsStatus === 'not_sent' && 'SMS Pending'}
+                    {(membership.smsStatus === 'not_sent' || membership.smsStatus === 'skipped' || membership.smsStatus === 'cancelled') && 'SMS Pending'}
                   </span>
                   <span className="text-xs leading-normal">
-                    {membership.smsStatus === 'sent' && 'Confirmation SMS has been sent to your registered mobile number.'}
-                    {membership.smsStatus === 'queued' && 'SMS confirmation is being sent.'}
-                    {membership.smsStatus === 'failed' && 'SMS could not be sent automatically. Your card is still active; please download your PDFs below.'}
-                    {membership.smsStatus === 'not_sent' && 'SMS confirmation is pending.'}
+                    {(membership.smsStatus === 'sent' || membership.smsStatus === 'delivered') && 'Confirmation SMS has been sent to your registered mobile number.'}
+                    {(membership.smsStatus === 'queued' || membership.smsStatus === 'sending') && 'SMS confirmation is being sent. Please check your phone shortly.'}
+                    {membership.smsStatus === 'failed' && 'SMS could not be sent automatically. Your card is still active; please download your PDFs below or contact support.'}
+                    {(membership.smsStatus === 'not_sent' || membership.smsStatus === 'skipped' || membership.smsStatus === 'cancelled') && 'SMS confirmation is pending. Your card is still active.'}
                   </span>
                 </div>
               </div>
