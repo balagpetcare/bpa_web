@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { ArrowRight, CalendarDays, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import LinkButton from '@/components/ui/LinkButton';
 import type { HeroSlide } from '@/types/bpa.types';
@@ -11,7 +11,11 @@ const FALLBACK_STATS = [
   { value: '64', label: 'Districts Reached' },
 ];
 
-const ROTATE_MS = 6000;
+const ROTATE_MS = 5000;
+
+function isValidSlide(slide: HeroSlide | null | undefined): slide is HeroSlide {
+  return !!slide && !!slide.id && !!slide.headline && !!slide.desktopImage?.url;
+}
 
 // Used when the CMS returns zero published slides
 function StaticHeroFallback() {
@@ -59,47 +63,59 @@ function StaticHeroFallback() {
   );
 }
 
-export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] }) {
-  const [current, setCurrent] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+export default function EnterpriseHeroSection({ slides: heroSlides }: { slides: HeroSlide[] }) {
+  const slides = useMemo(() => (
+    Array.isArray(heroSlides) ? heroSlides.filter(isValidSlide) : []
+  ), [heroSlides]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const count = slides.length;
 
-  const goTo = useCallback(
-    (idx: number) => {
-      setCurrent(((idx % count) + count) % count);
-    },
-    [count],
-  );
+  const goToSlide = useCallback((index: number) => {
+    if (count <= 0) return;
+    setActiveSlide(((index % count) + count) % count);
+  }, [count]);
 
-  const next = useCallback(() => goTo(current + 1), [current, goTo]);
-  const prev = useCallback(() => goTo(current - 1), [current, goTo]);
+  const goToNext = useCallback(() => {
+    if (count <= 0) return;
+    setActiveSlide((prev) => (prev + 1) % count);
+  }, [count]);
 
-  // Auto-rotate when there are multiple slides
-  const resetTimer = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (count > 1) {
-      timerRef.current = setInterval(next, ROTATE_MS);
-    }
-  }, [count, next]);
+  const goToPrevious = useCallback(() => {
+    if (count <= 0) return;
+    setActiveSlide((prev) => (prev - 1 + count) % count);
+  }, [count]);
 
   useEffect(() => {
-    resetTimer();
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [resetTimer]);
+    if (activeSlide >= count && count > 0) {
+      setActiveSlide(0);
+    }
+  }, [count, activeSlide]);
 
-  // Keyboard navigation
+  useEffect(() => {
+    if (isPaused || count <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % count);
+    }, ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [count, isPaused]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') { prev(); resetTimer(); }
-      if (e.key === 'ArrowRight') { next(); resetTimer(); }
+      if (e.key === 'ArrowLeft') {
+        goToPrevious();
+      }
+      if (e.key === 'ArrowRight') {
+        goToNext();
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [prev, next, resetTimer]);
+  }, [goToPrevious, goToNext]);
 
   if (count === 0) return <StaticHeroFallback />;
 
-  const slide = slides[current];
+  const slide = slides[activeSlide] ?? slides[0];
   const stats = slide.stats?.length ? slide.stats : FALLBACK_STATS;
 
   return (
@@ -108,6 +124,8 @@ export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] 
       style={{ minHeight: 'calc(100vh - 4rem)' }}
       aria-label="Hero slider"
       aria-roledescription="carousel"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
       {/* ── Background layers (one per slide, cross-fade) ── */}
       {slides.map((s, idx) => {
@@ -118,7 +136,11 @@ export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] 
             key={s.id}
             aria-hidden="true"
             className="absolute inset-0 transition-opacity duration-700 ease-in-out"
-            style={{ opacity: idx === current ? 1 : 0, zIndex: 0 }}
+            style={{
+              opacity: idx === activeSlide ? 1 : 0,
+              zIndex: idx === activeSlide ? 1 : 0,
+              pointerEvents: idx === activeSlide ? 'auto' : 'none',
+            }}
           >
             {/* Mobile image */}
             {mUrl && (
@@ -253,7 +275,7 @@ export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] 
           <>
             {/* Prev */}
             <button
-              onClick={() => { prev(); resetTimer(); }}
+              onClick={goToPrevious}
               aria-label="Previous slide"
               className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm transition-colors flex items-center justify-center"
               style={{ zIndex: 20 }}
@@ -263,7 +285,7 @@ export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] 
 
             {/* Next */}
             <button
-              onClick={() => { next(); resetTimer(); }}
+              onClick={goToNext}
               aria-label="Next slide"
               className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/15 hover:bg-white/30 backdrop-blur-sm transition-colors flex items-center justify-center"
               style={{ zIndex: 20 }}
@@ -279,11 +301,11 @@ export default function EnterpriseHeroSection({ slides }: { slides: HeroSlide[] 
               {slides.map((_, idx) => (
                 <button
                   key={idx}
-                  onClick={() => { goTo(idx); resetTimer(); }}
+                  onClick={() => goToSlide(idx)}
                   aria-label={`Go to slide ${idx + 1} of ${count}`}
-                  aria-current={idx === current ? 'true' : undefined}
+                  aria-current={idx === activeSlide ? 'true' : undefined}
                   className={`rounded-full transition-all duration-300 ${
-                    idx === current
+                    idx === activeSlide
                       ? 'w-6 h-2.5 bg-white'
                       : 'w-2.5 h-2.5 bg-white/40 hover:bg-white/70'
                   }`}
