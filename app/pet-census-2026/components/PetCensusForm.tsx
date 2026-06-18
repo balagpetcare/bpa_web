@@ -9,6 +9,7 @@ import { CheckCircle, ChevronRight, ChevronLeft, User, Dog, Heart, ClipboardList
 import FormField from '@/components/ui/FormField';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
+import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
 import { submitPetCensus } from '@/lib/api/care-card';
 import { getPublicZones } from '@/lib/api/community-care';
 import type { CommunityZonePublic } from '@/types/bpa.types';
@@ -48,6 +49,7 @@ export default function PetCensusForm() {
   const [duplicateHint, setDuplicateHint] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [locationValue, setLocationValue] = useState<LocationValue>({});
 
   useEffect(() => {
     getPublicZones().then(setZones).catch(() => {});
@@ -76,6 +78,7 @@ export default function PetCensusForm() {
         area: data.area || undefined,
         breed: data.breed || undefined,
         notes: data.notes || undefined,
+        ...locationValue,
         source: 'PET_CENSUS_2026',
         sourceRoute: '/pet-census-2026',
       });
@@ -208,7 +211,18 @@ export default function PetCensusForm() {
               <FormField label="Mobile Number" type="tel" required placeholder="017xxxxxxxx" error={errors.mobile?.message} {...register('mobile')} />
             </div>
             <FormField label="Email Address" type="email" placeholder="your@email.com (optional)" error={errors.email?.message} {...register('email')} />
-            
+
+            <div>
+              <p className="text-sm font-semibold text-(--bpa-navy) mb-3">Location (optional)</p>
+              <LocationSelector
+                value={locationValue}
+                onChange={setLocationValue}
+                showUnion
+                showWard
+                showAddressLine={false}
+              />
+            </div>
+
             <FormField label="BPA Community Zone" as="select" error={errors.zoneId?.message} {...register('zoneId')}>
               <option value="">Select zone if known</option>
               {zones.map((z) => (

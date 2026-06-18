@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, User, Phone, Mail, Save, CheckCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Save, CheckCircle, Loader2, AlertTriangle, MapPin } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
 
 interface FormState {
   name: string;
@@ -17,6 +18,7 @@ export default function EditProfilePage() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormState>({ name: '', phone: '' });
+  const [locationValue, setLocationValue] = useState<LocationValue>({});
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -66,6 +68,7 @@ export default function EditProfilePage() {
         body: JSON.stringify({
           name: form.name.trim(),
           phone: form.phone.trim() || undefined,
+          ...locationValue,
         }),
       });
 
@@ -166,6 +169,23 @@ export default function EditProfilePage() {
                 />
               </div>
               <p className="text-xs text-gray-400 mt-1">Enter your 11-digit Bangladesh mobile number (e.g. 01711XXXXXX)</p>
+            </div>
+
+            {/* Location */}
+            <div className="border border-gray-100 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <MapPin className="w-4 h-4 text-(--bpa-green)" />
+                <span className="text-sm font-semibold text-gray-700">
+                  Location <span className="font-normal text-gray-400">| অবস্থান</span>
+                </span>
+              </div>
+              <LocationSelector
+                value={locationValue}
+                onChange={setLocationValue}
+                showUnion
+                showWard
+                showAddressLine
+              />
             </div>
 
             {/* Email — readonly */}
