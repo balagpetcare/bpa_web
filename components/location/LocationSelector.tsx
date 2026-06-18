@@ -70,10 +70,18 @@ async function fetchLocations(
   if (type) params.set('type', type);
   if (parentId) params.set('parentId', parentId);
   const url = getPublicApiUrl(`/public/locations?${params.toString()}`);
-  const res = await fetch(url, { next: { revalidate: 3600 } } as RequestInit);
-  if (!res.ok) return [];
-  const json = await res.json();
-  return json.data ?? [];
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error(`[LocationSelector] fetch failed: ${url} → HTTP ${res.status}`);
+    return [];
+  }
+  const json: unknown = await res.json();
+  // Support { data: [...] }, { success: true, data: [...] }, or direct array
+  if (Array.isArray(json)) return json as LocationOption[];
+  if (json && typeof json === 'object' && Array.isArray((json as Record<string, unknown>).data)) {
+    return (json as Record<string, unknown>).data as LocationOption[];
+  }
+  return [];
 }
 
 // ── Label helper ───────────────────────────────────────────────────────────────
@@ -187,6 +195,8 @@ export default function LocationSelector({
   const [loadingWard, setLoadingWard]   = useState(false);
   const [loadingUnion, setLoadingUnion] = useState(false);
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
   const emit = useCallback(
     (patch: Partial<LocationValue>) => onChange?.({ ...value, ...patch }),
     [onChange, value],
@@ -196,16 +206,27 @@ export default function LocationSelector({
   useEffect(() => {
     if (!showDivision) return;
     setLoadingDiv(true);
-    fetchLocations('DIVISION').then((d) => { setDivisions(d); setLoadingDiv(false); });
+    setFetchError(null);
+    fetchLocations('DIVISION')
+      .then((d) => setDivisions(d))
+      .catch((e: unknown) => {
+        console.error('[LocationSelector] divisions load failed:', e);
+        setFetchError('Location loading failed. Please refresh and try again.');
+      })
+      .finally(() => setLoadingDiv(false));
   }, [showDivision]);
 
   // Load districts when division changes
   useEffect(() => {
     if (!value.divisionId || !showDistrict) { setDistricts([]); return; }
     setLoadingDist(true);
-    fetchLocations('DISTRICT', value.divisionId).then((d) => {
-      setDistricts(d); setLoadingDist(false);
-    });
+    fetchLocations('DISTRICT', value.divisionId)
+      .then((d) => setDistricts(d))
+      .catch((e: unknown) => {
+        console.error('[LocationSelector] districts load failed:', e);
+        setFetchError('Location loading failed. Please refresh and try again.');
+      })
+      .finally(() => setLoadingDist(false));
   }, [value.divisionId, showDistrict]);
 
   // Load upazilas AND city corporations when district changes
@@ -214,11 +235,22 @@ export default function LocationSelector({
     if (!value.districtId) return;
     if (showUpazila) {
       setLoadingUp(true);
-      fetchLocations('UPAZILA', value.districtId).then((d) => { setUpazilas(d); setLoadingUp(false); });
+      fetchLocations('UPAZILA', value.districtId)
+        .then((d) => setUpazilas(d))
+        .catch((e: unknown) => {
+          console.error('[LocationSelector] upazilas load failed:', e);
+          setFetchError('Location loading failed. Please refresh and try again.');
+        })
+        .finally(() => setLoadingUp(false));
     }
     if (showCityCorporation) {
       setLoadingCorp(true);
-      fetchLocations('CITY_CORPORATION', value.districtId).then((d) => { setCorps(d); setLoadingCorp(false); });
+      fetchLocations('CITY_CORPORATION', value.districtId)
+        .then((d) => setCorps(d))
+        .catch((e: unknown) => {
+          console.error('[LocationSelector] city corps load failed:', e);
+        })
+        .finally(() => setLoadingCorp(false));
     }
   }, [value.districtId, showUpazila, showCityCorporation]);
 
@@ -227,7 +259,12 @@ export default function LocationSelector({
     setZones([]); setWards([]);
     if (!value.cityCorporationId || !showZone) return;
     setLoadingZone(true);
-    fetchLocations('CITY_ZONE', value.cityCorporationId).then((d) => { setZones(d); setLoadingZone(false); });
+    fetchLocations('CITY_ZONE', value.cityCorporationId)
+      .then((d) => setZones(d))
+      .catch((e: unknown) => {
+        console.error('[LocationSelector] zones load failed:', e);
+      })
+      .finally(() => setLoadingZone(false));
   }, [value.cityCorporationId, showZone]);
 
   // Load wards when zone changes
@@ -235,7 +272,12 @@ export default function LocationSelector({
     setWards([]);
     if (!value.cityZoneId || !showWard) return;
     setLoadingWard(true);
-    fetchLocations('WARD', value.cityZoneId).then((d) => { setWards(d); setLoadingWard(false); });
+    fetchLocations('WARD', value.cityZoneId)
+      .then((d) => setWards(d))
+      .catch((e: unknown) => {
+        console.error('[LocationSelector] wards load failed:', e);
+      })
+      .finally(() => setLoadingWard(false));
   }, [value.cityZoneId, showWard]);
 
   // Load unions when upazila changes
@@ -243,11 +285,20 @@ export default function LocationSelector({
     setUnions([]);
     if (!value.upazilaId || !showUnion) return;
     setLoadingUnion(true);
-    fetchLocations('UNION', value.upazilaId).then((d) => { setUnions(d); setLoadingUnion(false); });
+    fetchLocations('UNION', value.upazilaId)
+      .then((d) => setUnions(d))
+      .catch((e: unknown) => {
+        console.error('[LocationSelector] unions load failed:', e);
+      })
+      .finally(() => setLoadingUnion(false));
   }, [value.upazilaId, showUnion]);
 
   return (
-    <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 ${className}`}>
+    <div className={className}>
+      {fetchError && (
+        <p className="mb-2 text-xs text-red-600 bg-red-50 rounded px-3 py-2">{fetchError}</p>
+      )}
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {showDivision && (
         <LSelect
           id="loc-division"
@@ -389,6 +440,7 @@ export default function LocationSelector({
           />
         </div>
       )}
+    </div>
     </div>
   );
 }

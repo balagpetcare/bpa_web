@@ -1,15 +1,21 @@
 /**
  * Returns the bare API origin — no trailing slash, no /api/v1 suffix.
  *
- * Handles two common env-var patterns:
- *   NEXT_PUBLIC_API_URL=https://api.bangladeshpetassociation.com          → kept as-is
- *   NEXT_PUBLIC_API_URL=https://api.bangladeshpetassociation.com/api/v1   → suffix stripped
+ * Env-var precedence (first defined wins):
+ *   NEXT_PUBLIC_API_BASE_URL  e.g. http://localhost:4000
+ *   NEXT_PUBLIC_API_URL       e.g. https://api.bangladeshpetassociation.com
+ *                             (trailing /api/v1 stripped automatically)
+ *
+ * Dev fallback (when no env var is set): http://localhost:4000
+ * Prod fallback (last resort):           https://api.bangladeshpetassociation.com
  */
 export function getApiOrigin(): string {
   const raw =
     process.env.NEXT_PUBLIC_API_BASE_URL ||
     process.env.NEXT_PUBLIC_API_URL ||
-    'https://api.bangladeshpetassociation.com';
+    (process.env.NODE_ENV === 'production'
+      ? 'https://api.bangladeshpetassociation.com'
+      : 'http://localhost:4000');
 
   return raw.replace(/\/api\/v1\/?$/, '').replace(/\/$/, '');
 }
