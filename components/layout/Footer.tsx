@@ -1,10 +1,11 @@
 import Link from 'next/link';
-import { 
-  Phone, 
-  Mail, 
-  MapPin, 
+import {
+  Phone,
+  Mail,
+  MapPin,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Heart,
 } from 'lucide-react';
 import {
   FaFacebook,
@@ -24,10 +25,17 @@ export default async function Footer() {
   ]);
 
   const footer = homepage?.footer ?? null;
-  const footerLogoUrl = s?.secondaryLogoUrl ?? s?.primaryLogoUrl ?? null;
-  
-  const contactPhone = s?.officialPhone ?? null;
-  const contactEmail = s?.generalEmail ?? s?.supportEmail ?? footer?.email ?? null;
+  // Use secondaryLogoUrl (dark-bg logo) first; only fall back to primaryLogoUrl.
+  // Track which is being used so we can apply invert only when using the light-bg logo.
+  const footerLogoUrl = s?.secondaryLogoUrl ?? null;
+  const footerLogoFallbackUrl = !footerLogoUrl ? (s?.primaryLogoUrl ?? null) : null;
+
+  const contactPhone = s?.officialPhone ?? s?.supportPhone ?? null;
+  const contactEmail =
+    s?.supportEmail ??
+    s?.generalEmail ??
+    footer?.email ??
+    'vaccination2026@bangladeshpetassociation.com';
   const contactAddress = s ? formatAddress(s) : null;
   const officeHours = s?.officeHours || '9:00 AM - 6:00 PM (Sat-Thu)';
 
@@ -74,8 +82,40 @@ export default async function Footer() {
   };
 
   return (
-    <footer className="bg-(--bpa-navy) text-gray-300 pt-16 pb-8 border-t border-white/5">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-(--bpa-navy) text-gray-300 pt-0 pb-8 border-t border-white/5">
+      {/* Donate CTA strip */}
+      <div className="border-b border-white/10 bg-white/[0.03]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-(--bpa-green)/20 shrink-0">
+              <Heart size={20} className="text-(--bpa-green) fill-current" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-white">Support Animal Welfare</p>
+              <p className="text-xs text-gray-400">Every Taka goes directly to rescue, care & vaccines.</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[100, 500, 1000].map((amt) => (
+              <Link
+                key={amt}
+                href={`/donate?amount=${amt}#donate-form`}
+                className="rounded-lg border border-white/15 px-4 py-2 text-xs font-bold text-gray-300 hover:bg-(--bpa-green) hover:border-(--bpa-green) hover:text-white transition-all"
+              >
+                ৳{amt.toLocaleString()}
+              </Link>
+            ))}
+            <Link
+              href="/donate#donate-form"
+              className="rounded-lg bg-(--bpa-green) px-5 py-2 text-xs font-bold text-white hover:opacity-90 transition-all flex items-center gap-1.5"
+            >
+              <Heart size={12} className="fill-current" /> Donate Now
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           
@@ -83,8 +123,13 @@ export default async function Footer() {
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2 mb-6 group">
               {footerLogoUrl ? (
+                // Secondary logo is designed for dark backgrounds — no filter needed
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={footerLogoUrl} alt="BPA Logo" className="h-10 w-auto object-contain brightness-0 invert" />
+                <img src={footerLogoUrl} alt="BPA Logo" className="h-10 w-auto object-contain" />
+              ) : footerLogoFallbackUrl ? (
+                // Primary logo is for light backgrounds — invert to show on dark footer
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={footerLogoFallbackUrl} alt="BPA Logo" className="h-10 w-auto object-contain brightness-0 invert" />
               ) : (
                 <>
                   <div className="w-10 h-10 rounded-xl bg-(--bpa-green) flex items-center justify-center shrink-0 shadow-lg shadow-black/20 group-hover:scale-105 transition-transform">
@@ -202,6 +247,16 @@ export default async function Footer() {
                     <a href={`tel:${contactPhone}`} className="text-sm text-gray-300 hover:text-white transition-colors">
                       {contactPhone}
                     </a>
+                    {s?.whatsappNumber && (
+                      <a
+                        href={`https://wa.me/${s.whatsappNumber.replace(/\D/g, '')}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block text-xs text-gray-500 hover:text-(--bpa-green) transition-colors mt-0.5"
+                      >
+                        WhatsApp: {s.whatsappNumber}
+                      </a>
+                    )}
                   </div>
                 </div>
               )}
