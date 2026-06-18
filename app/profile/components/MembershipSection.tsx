@@ -35,8 +35,8 @@ function StatusPill({ status }: { status: DashboardMembership['status'] }) {
 export default function MembershipSection({ membership }: Props) {
   return (
     <SectionCard
-      title="Membership"
-      subtitle="Your BPA community membership"
+      title="Care Partner Card"
+      subtitle="Your BPA Care Partner Card"
       icon={<CreditCard className="w-4 h-4" />}
       action={
         <Link
@@ -51,14 +51,14 @@ export default function MembershipSection({ membership }: Props) {
       {!membership || membership.status === 'none' ? (
         <EmptyState
           icon={<CreditCard className="w-6 h-6" />}
-          title="No active membership"
-          description="Join as a Care Partner to support community pet welfare."
+          title="No Care Partner Card yet"
+          description="Choose a card tier and become a BPA Care Partner to support community pet welfare."
           action={
             <Link
               href="/community-pet-care/contribute"
               className="inline-flex items-center px-4 py-2 bg-(--bpa-green) text-white text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
             >
-              Become a Care Partner
+              Get Your Care Partner Card
             </Link>
           }
         />
@@ -105,7 +105,7 @@ export default function MembershipSection({ membership }: Props) {
           {/* CTA */}
           <div className="flex gap-2 pt-1">
             <Link
-              href="/community-pet-care/contribute"
+              href="/care-partner-card"
               className="flex-1 text-center px-3 py-2 bg-(--bpa-green-light) text-(--bpa-green) text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
             >
               Digital Card

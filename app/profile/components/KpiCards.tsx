@@ -10,7 +10,7 @@ function statusLabel(s: MembershipStatus) {
     active: 'Active',
     expired: 'Expired',
     pending: 'Pending',
-    none: 'Not a Member',
+    none: 'No Card',
   };
   return map[s];
 }
@@ -34,7 +34,7 @@ interface KpiConfig {
 export default function KpiCards({ kpi }: Props) {
   const cards: KpiConfig[] = [
     {
-      label: 'Membership',
+      label: 'Care Partner Card',
       value: statusLabel(kpi.membershipStatus),
       icon: <Heart className="w-5 h-5" />,
       accent: 'bg-(--bpa-green-light) text-(--bpa-green)',
