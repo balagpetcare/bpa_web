@@ -75,10 +75,10 @@ export default async function Footer() {
       { label: 'Certificate Verification', href: '/verify' },
     ],
     legal: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms & Conditions', href: '#' },
-      { label: 'Refund Policy', href: '#' },
-      { label: 'Disclaimer', href: '#' },
+      { label: 'Privacy Policy', href: '/privacy-policy' },
+      { label: 'Terms', href: '/terms' },
+      { label: 'Refund Policy', href: '/refund-policy' },
+      { label: 'Data Deletion', href: '/data-deletion' },
     ]
   };
 
