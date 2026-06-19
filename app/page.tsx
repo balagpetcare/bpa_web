@@ -15,6 +15,8 @@ import TransparencyTeaserSection from '@/components/sections/TransparencyTeaserS
 import PetCensusCTASection from '@/components/sections/PetCensusCTASection';
 import PetSmartSolutionPreviewSection from '@/components/sections/PetSmartSolutionPreviewSection';
 import DonationCTASection from '@/components/donations/DonationCTASection';
+import FeaturedVideosSection from '@/components/sections/FeaturedVideosSection';
+import CommunityPostsSection from '@/components/sections/CommunityPostsSection';
 import { getNewsList } from '@/lib/api/news';
 import { getEventsList } from '@/lib/api/events';
 import { getCommitteeMembers } from '@/lib/api/committee';
@@ -23,6 +25,8 @@ import { getSeoData } from '@/lib/api/seo';
 import { getPublicHomepage } from '@/lib/api/homepage';
 import { getPublicZones, getCareFundOverview } from '@/lib/api/community-care';
 import { getMembershipOverview } from '@/lib/api/community-membership';
+import { getPetCensusSettings } from '@/lib/api/pet-census';
+import { getContentHomepage } from '@/lib/api/content';
 import { normalizeMembershipOverview } from '@/lib/community-care-normalizer';
 import { buildMetadata } from '@/lib/seo';
 import LaunchOfferCountdown from '@/components/community-care/LaunchOfferCountdown';
@@ -52,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 
 export default async function HomePage() {
-  const [homepageResult, newsResult, eventsResult, committeeResult, campaignsResult, zonesResult, overviewResult, membershipOverviewResult] = await Promise.allSettled([
+  const [homepageResult, newsResult, eventsResult, committeeResult, campaignsResult, zonesResult, overviewResult, membershipOverviewResult, censusSettingsResult, contentHomepageResult] = await Promise.allSettled([
     getPublicHomepage('en', { cache: 'no-store' }),
     getNewsList({ limit: 3, isFeatured: undefined }, { next: { revalidate: 300, tags: ['news-list'] } }),
     getEventsList({ limit: 3, upcoming: true }, { next: { revalidate: 300, tags: ['events-list'] } }),
@@ -61,6 +65,8 @@ export default async function HomePage() {
     getPublicZones({ next: { revalidate: 300, tags: ['community-zones'] } } as RequestInit),
     getCareFundOverview({ next: { revalidate: 300, tags: ['care-fund-overview'] } } as RequestInit),
     getMembershipOverview({ next: { revalidate: 300, tags: ['membership-overview'] } } as RequestInit),
+    getPetCensusSettings(),
+    getContentHomepage(),
   ]);
 
   const homepage = homepageResult.status === 'fulfilled' ? homepageResult.value : null;
@@ -75,6 +81,9 @@ export default async function HomePage() {
   
   const rawMembershipOverview = membershipOverviewResult.status === 'fulfilled' ? membershipOverviewResult.value : null;
   const membershipOverview = normalizeMembershipOverview(rawMembershipOverview);
+
+  const censusSettings = censusSettingsResult.status === 'fulfilled' ? censusSettingsResult.value : null;
+  const contentHomepage = contentHomepageResult.status === 'fulfilled' ? contentHomepageResult.value : null;
 
   const sections = homepage?.sections ?? [];
   const section = (type: string) => sections.find((item) => item.type === type) ?? null;
@@ -136,7 +145,13 @@ export default async function HomePage() {
         subtitle="Your donation funds vaccines, emergency surgery, daily meals, and rescue operations for animals across Bangladesh. Every contribution is tracked and reported."
         theme="green"
       />
-      <PetCensusCTASection />
+      <PetCensusCTASection settings={censusSettings} />
+      {contentHomepage && (
+        <>
+          <FeaturedVideosSection videos={contentHomepage.featuredVideos} />
+          <CommunityPostsSection posts={contentHomepage.communityPosts} />
+        </>
+      )}
       <MembershipVolunteerSection membership={membership} volunteer={volunteer} />
       <LatestNewsSection items={news} section={section('news')} />
       <UpcomingEventsSection items={events} section={section('events')} />

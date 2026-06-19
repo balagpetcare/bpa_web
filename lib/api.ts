@@ -54,3 +54,26 @@ export async function apiPost<T>(
     ...options,
   });
 }
+
+export async function apiPut<T>(
+  path: string,
+  data: unknown,
+  options?: RequestInit,
+): Promise<ApiResponse<T>> {
+  return request<T>(path, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+    ...options,
+  });
+}
+
+export async function apiDelete<T>(
+  path: string,
+  options?: RequestInit,
+): Promise<ApiResponse<T>> {
+  return request<T>(path, {
+    method: 'DELETE',
+    ...options,
+  });
+}
+

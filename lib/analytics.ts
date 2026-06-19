@@ -13,6 +13,53 @@ declare global {
 
 const ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
 
+// ─── Internal BPA Operations Event Logging ────────────────────────────────────
+async function logInternalEvent(
+  type: string,
+  moduleName: string,
+  action: string,
+  title: string,
+  metadata?: Record<string, unknown>
+) {
+  if (typeof window === 'undefined') return;
+  try {
+    let visitorId = localStorage.getItem('bpa_visitor_id');
+    if (!visitorId) {
+      visitorId = 'v_' + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('bpa_visitor_id', visitorId);
+    }
+    let sessionId = sessionStorage.getItem('bpa_session_id');
+    if (!sessionId) {
+      sessionId = 's_' + Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('bpa_session_id', sessionId);
+    }
+
+    const payload = {
+      type,
+      module: moduleName,
+      action,
+      title,
+      path: window.location.pathname,
+      referrer: document.referrer || 'Direct',
+      device: window.innerWidth < 768 ? 'Mobile' : window.innerWidth < 1024 ? 'Tablet' : 'Desktop',
+      sessionId,
+      visitorId,
+      metadata
+    };
+
+    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+    await fetch(`${apiBase}/public/analytics/events`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (err) {
+    console.warn('[BPA Analytics] Internal tracking failed silently:', err);
+  }
+}
+
 // ─── Safe wrappers ────────────────────────────────────────────────────────────
 // All calls are no-ops when:
 //   • running on the server (typeof window === 'undefined')
@@ -34,6 +81,12 @@ function safeFbq(event: string, name: string, params?: Record<string, unknown>) 
 export function trackPageView(path: string) {
   safeGtag('event', 'page_view', { page_path: path });
   safeFbq('track', 'PageView');
+  
+  // Internal logging
+  logInternalEvent('PAGE_VIEW', 'Website', 'page_view', `Visited ${path}`);
+  if (path.includes('/membership')) {
+    logInternalEvent('MEMBERSHIP_PAGE_VIEWED', 'Membership', 'viewed', 'Membership Page Viewed');
+  }
 }
 
 // ─── Conversion: campaign registration ───────────────────────────────────────
@@ -67,6 +120,15 @@ export function trackCampaignRegistration(params: CampaignRegistrationParams) {
       num_items: params.petCount,
     });
   }
+
+  // Internal log
+  logInternalEvent(
+    'CAMPAIGN_REGISTER_STARTED', 
+    'Campaign', 
+    'register_started', 
+    `Campaign Registration Started: ${params.campaignTitle}`,
+    { campaignId: params.campaignId, valueBdt: params.valueBdt }
+  );
 }
 
 // ─── Conversion: booking confirmed ───────────────────────────────────────────
@@ -86,6 +148,15 @@ export function trackBookingSuccess(params: BookingSuccessParams) {
   safeFbq('track', 'CompleteRegistration', {
     content_name: params.campaignTitle,
   });
+
+  // Internal log
+  logInternalEvent(
+    'FORM_SUBMITTED', 
+    'Campaign', 
+    'booking_confirmed', 
+    `Campaign Booking Confirmed: ${params.campaignTitle}`,
+    { bookingNumber: params.bookingNumber, status: params.status }
+  );
 }
 
 // ─── Conversion: payment completed ───────────────────────────────────────────
@@ -115,6 +186,15 @@ export function trackPaymentSuccess(params: PaymentSuccessParams) {
       transaction_id: params.txn ?? '',
     });
   }
+
+  // Internal log
+  logInternalEvent(
+    'FORM_SUBMITTED', 
+    'Payment', 
+    'purchase_completed', 
+    `Payment Success: ${params.itemName || 'BPA Payment'}`,
+    { txn: params.txn, value, currency }
+  );
 }
 
 // ─── Conversion: contact form ─────────────────────────────────────────────────
@@ -122,6 +202,9 @@ export function trackPaymentSuccess(params: PaymentSuccessParams) {
 export function trackContactSubmit() {
   safeGtag('event', 'contact_form_submit', { event_category: 'engagement' });
   safeFbq('track', 'Contact');
+
+  // Internal log
+  logInternalEvent('CONTACT_FORM_SUBMITTED', 'Contact', 'inquiry_submitted', 'Contact Inquiry Form Submitted');
 }
 
 // ─── Conversion: membership application ──────────────────────────────────────
@@ -132,6 +215,14 @@ export function trackMembershipSubmit(membershipType?: string) {
     event_category: 'conversion',
   });
   safeFbq('track', 'Lead', { content_name: 'Membership Application' });
+
+  // Internal log
+  logInternalEvent(
+    'FORM_SUBMITTED', 
+    'Membership', 
+    'application_submitted', 
+    `Membership Applied: ${membershipType || 'Standard'}`
+  );
 }
 
 // ─── Conversion: community care contribution ──────────────────────────────────
@@ -143,6 +234,33 @@ export function trackContributionSubmit(amountBdt: number) {
     event_category: 'conversion',
   });
   safeFbq('track', 'Donate', { value: amountBdt, currency: 'BDT' });
+
+  // Internal log
+  logInternalEvent(
+    'FORM_SUBMITTED', 
+    'Donation', 
+    'donation_completed', 
+    `Donation Completed: ৳${amountBdt}`,
+    { amountBdt }
+  );
+}
+
+// ─── Start trackers ───────────────────────────────────────────────────────────
+
+export function trackMembershipPurchaseStart() {
+  logInternalEvent('MEMBERSHIP_PURCHASE_STARTED', 'Membership', 'purchase_started', 'Membership Purchase Form Initiated');
+}
+
+export function trackDonationStart() {
+  logInternalEvent('DONATION_STARTED', 'Donation', 'donation_started', 'Donation Payment Form Initiated');
+}
+
+export function trackPetCensusStart() {
+  logInternalEvent('PET_CENSUS_STARTED', 'Pet Census', 'census_started', 'Pet Census Submission Form Initiated');
+}
+
+export function trackCampaignRegisterStart(title: string) {
+  logInternalEvent('CAMPAIGN_REGISTER_STARTED', 'Campaign', 'register_started', `Campaign Register Form Initiated: ${title}`);
 }
 
 // ─── Generic helpers ──────────────────────────────────────────────────────────
