@@ -31,10 +31,10 @@ const FAQ = [
 export default async function ContactPage() {
   const s = await getPublicSiteSettings();
 
-  const address = s.addressLine 
-    ? [s.addressLine] 
-    : addressLines(s).length > 0 
-      ? addressLines(s) 
+  const address = s.addressLine
+    ? [s.addressLine]
+    : addressLines(s).length > 0
+      ? addressLines(s)
       : ['House 12, Road 5, Block D', 'Bashundhara R/A', 'Dhaka 1229, Bangladesh'];
 
   const phones = [s.primaryPhone, s.secondaryPhone, s.officialPhone, s.supportPhone].filter(Boolean) as string[];
@@ -90,8 +90,8 @@ export default async function ContactPage() {
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-                    {lines.map((line) => (
-                      <p key={line} className="text-sm text-(--bpa-green) leading-relaxed">{line}</p>
+                    {lines.map((line, index) => (
+                      <p key={`${label}-${index}-${line}`} className="text-sm text-(--bpa-green) leading-relaxed">{line}</p>
                     ))}
                   </div>
                 </div>
