@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { buildMetadata } from '@/lib/seo';
 import { getSeoData } from '@/lib/api/seo';
 import { getPetCensusSettings } from '@/lib/api/pet-census';
@@ -73,12 +74,12 @@ export default async function PetCensusPage() {
               <p className="text-gray-500 mb-8">
                 We are currently processing the collected data to better serve Dhaka&apos;s pet community. Stay tuned for the impact report.
               </p>
-              <button 
-                onClick={() => window.location.href = '/'}
-                className="bg-(--bpa-navy) text-white px-8 py-3 rounded-xl font-bold hover:bg-(--bpa-navy-light) transition-all"
+              <Link 
+                href="/"
+                className="inline-block bg-(--bpa-navy) text-white px-8 py-3 rounded-xl font-bold hover:bg-(--bpa-navy-light) transition-all"
               >
                 Back to Homepage
-              </button>
+              </Link>
             </div>
           )}
         </div>
