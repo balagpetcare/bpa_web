@@ -1,6 +1,9 @@
 import type { ApiResponse } from '@/types/bpa.types';
+import { getApiOrigin } from '@/lib/utils/api-url';
 
-export const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+// Strip any /api/v1 suffix from the env var so it is never doubled when
+// request() appends `/api/v1` below.  getApiOrigin() handles this normalisation.
+export const BASE_URL = getApiOrigin();
 
 export class ApiError extends Error {
   constructor(
