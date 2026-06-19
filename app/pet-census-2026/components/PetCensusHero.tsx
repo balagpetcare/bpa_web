@@ -135,13 +135,13 @@ export default function PetCensusHero({ settings }: Props) {
           {kpis.map(({ icon: Icon, value, label, labelBn }) => (
             <div
               key={label}
-              className="bg-(--bpa-navy) hover:bg-[#1f2d50] transition-colors duration-200 p-6 lg:p-7 flex flex-col items-center text-center"
+              className="bg-(--bpa-navy) hover:bg-[#1f2d50] transition-colors duration-200 p-3 sm:p-6 lg:p-7 flex flex-col items-center text-center"
             >
-              <Icon size={15} className="text-(--bpa-green) mb-4 opacity-60" />
-              <div className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
+              <Icon size={15} className="text-(--bpa-green) mb-2 sm:mb-4 opacity-60" />
+              <div className="text-lg sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-none break-all">
                 {value}
               </div>
-              <div className="text-xs font-medium text-gray-400 mt-2 leading-tight uppercase tracking-wider">{label}</div>
+              <div className="text-[9px] sm:text-xs font-medium text-gray-400 mt-1 sm:mt-2 leading-tight uppercase tracking-wider">{label}</div>
               <div className="hidden sm:block text-[10px] text-gray-600 mt-1">{labelBn}</div>
             </div>
           ))}

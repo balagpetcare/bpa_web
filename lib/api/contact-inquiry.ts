@@ -24,9 +24,9 @@ export interface SubmitInquiryPayload {
 }
 
 export function getContactInquiryConfig() {
-  return apiFetch<ContactInquiryConfig>('/admin/contact-inquiries/public/config');
+  return apiFetch<ContactInquiryConfig>('/public/contact-inquiries/config');
 }
 
 export function submitContactInquiry(data: SubmitInquiryPayload) {
-  return apiPost<{ id: string; ticketNumber: string; message: string }>('/admin/contact-inquiries/public', data);
+  return apiPost<{ id: string; ticketNumber: string; message: string }>('/public/contact-inquiries', data);
 }

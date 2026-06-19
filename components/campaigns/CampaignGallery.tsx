@@ -11,7 +11,7 @@ interface Props {
 }
 
 function getUrl(item: CampaignMedia): string {
-  return resolveMediaUrl(item.mediaFile?.url ?? (item as any).url) ?? '';
+  return resolveMediaUrl(item.mediaFile?.url ?? '') ?? '';
 }
 
 export default function CampaignGallery({ items, title }: Props) {

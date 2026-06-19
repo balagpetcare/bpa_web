@@ -20,8 +20,8 @@ function VerifyEmailContent() {
     try {
       await apiPost('/auth/email/resend-verification', { email });
       setSent(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend email');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend email');
     } finally {
       setLoading(false);
     }

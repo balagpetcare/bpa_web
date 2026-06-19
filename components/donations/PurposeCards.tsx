@@ -11,7 +11,7 @@ interface PurposeCardsProps {
   subtitle?: string;
 }
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
   syringe: Activity,
   bone: Bone,
   ambulance: Activity,

@@ -34,8 +34,8 @@ function ResetPasswordContent() {
       await apiPost('/auth/password/reset', { token, password });
       setSuccess(true);
       setTimeout(() => router.push('/auth/sign-in'), 3000);
-    } catch (err: any) {
-      setError(err.message || 'Failed to reset password');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to reset password');
     } finally {
       setLoading(false);
     }

@@ -1068,7 +1068,7 @@ export default function RegistrationFormWrapper() {
               <h2 className="text-base font-bold text-(--bpa-navy) mb-0.5 flex items-center gap-2">
                 <User size={16} className="text-(--bpa-green)" /> Your Information
               </h2>
-              <p className="text-xs text-gray-500 mb-5">No account required. We'll use this to send your confirmation.</p>
+              <p className="text-xs text-gray-500 mb-5">No account required. We&apos;ll use this to send your confirmation.</p>
               <div className="space-y-4">
                 {[
                   { label: 'Full Name', key: 'name', type: 'text', required: true, placeholder: 'e.g. Rahim Uddin', hint: '' },
@@ -1261,7 +1261,7 @@ export default function RegistrationFormWrapper() {
               </div>
               {!isFree && (
                 <p className="text-xs text-gray-400 text-center mt-3">
-                  You'll be redirected to a secure payment page after confirming.
+                  You&apos;ll be redirected to a secure payment page after confirming.
                 </p>
               )}
             </div>

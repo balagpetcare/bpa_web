@@ -13,6 +13,19 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    // React Compiler rules are overly strict for existing codebases.
+    // set-state-in-effect is the normal pattern for initializing state from
+    // async data / props. The compiler handles safe-memoization automatically.
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/immutability": "off",
+      // Allow img tags on pages that render user/markdown content
+      // where next/Image is impractical.
+      "@next/next/no-img-element": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -30,18 +30,18 @@ export default function CommunityCareFundSection({ overview, zones }: Props) {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-6 text-center mb-12 max-w-2xl mx-auto">
+        <div className="grid grid-cols-3 gap-3 sm:gap-6 text-center mb-12 max-w-2xl mx-auto">
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">{safeOverview.totalContributors.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 mt-1">Contributors</div>
+              <div className="text-xl sm:text-3xl font-bold text-(--bpa-green) break-words">{safeOverview.totalContributors.toLocaleString()}</div>
+              <div className="text-[10px] sm:text-xs text-gray-400 mt-1">Contributors</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">৳{safeOverview.totalRaised.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 mt-1">Collected</div>
+              <div className="text-xl sm:text-3xl font-bold text-(--bpa-green) break-words">৳{safeOverview.totalRaised.toLocaleString()}</div>
+              <div className="text-[10px] sm:text-xs text-gray-400 mt-1">Collected</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-(--bpa-green)">{safeOverview.totalActiveCards.toLocaleString()}</div>
-              <div className="text-xs text-gray-400 mt-1">Care Cards</div>
+              <div className="text-xl sm:text-3xl font-bold text-(--bpa-green) break-words">{safeOverview.totalActiveCards.toLocaleString()}</div>
+              <div className="text-[10px] sm:text-xs text-gray-400 mt-1">Care Cards</div>
             </div>
         </div>
 

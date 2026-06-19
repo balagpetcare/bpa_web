@@ -103,7 +103,7 @@ export default async function ImpactStoryPage({ params }: PageProps) {
                 <h4 className="text-sm font-bold text-(--bpa-navy) mb-1">Made Possible By Your Donations</h4>
                 <p className="text-xs text-gray-600 leading-relaxed">
                   This impact was directly funded by contributions to the 
-                  {story.campaign?.titleEn && <Link href={`/donations/campaigns/${story.campaign.slug}`} className="font-bold text-blue-600 hover:underline mx-1">"{story.campaign.titleEn}"</Link>}
+                  {story.campaign?.titleEn && <Link href={`/donations/campaigns/${story.campaign.slug}`} className="font-bold text-blue-600 hover:underline mx-1">&ldquo;{story.campaign.titleEn}&rdquo;</Link>}
                   {story.campaign?.titleEn && story.purpose?.titleEn ? ' and ' : ' '}
                   {story.purpose?.titleEn && <span className="font-bold text-gray-800 mx-1">{story.purpose.titleEn}</span>}
                   fund.
@@ -114,7 +114,7 @@ export default async function ImpactStoryPage({ params }: PageProps) {
 
           {story.shortDescriptionEn && (
             <p className="text-xl text-gray-600 italic leading-relaxed mb-8 border-l-4 border-(--bpa-green) pl-6">
-              "{story.shortDescriptionEn}"
+              {'\u201C'}{story.shortDescriptionEn}{'\u201D'}
             </p>
           )}
 

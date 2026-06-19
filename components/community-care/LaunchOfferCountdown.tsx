@@ -114,23 +114,32 @@ export default function LaunchOfferCountdown({ program }: Props) {
           </p>
         )}
 
-        <div className="flex items-start justify-center gap-3 sm:gap-6 mb-12">
-          <TimeUnit value={time?.days ?? 0} label="Days" labelBn="দিন" />
-          <div className="text-2xl sm:text-4xl font-black mt-4 sm:mt-8 opacity-40">:</div>
-          <TimeUnit value={time?.hours ?? 0} label="Hours" labelBn="ঘণ্টা" />
-          <div className="text-2xl sm:text-4xl font-black mt-4 sm:mt-8 opacity-40">:</div>
-          <TimeUnit value={time?.minutes ?? 0} label="Min" labelBn="মিনিট" />
-          <div className="text-2xl sm:text-4xl font-black mt-4 sm:mt-8 opacity-40">:</div>
-          <TimeUnit value={time?.seconds ?? 0} label="Sec" labelBn="সেকেন্ড" />
+        {/* Mobile: 2×2 grid; sm+: row with separators */}
+        <div className="mb-12 w-full">
+          <div className="grid grid-cols-2 gap-3 sm:hidden max-w-[240px] mx-auto">
+            <TimeUnit value={time?.days ?? 0} label="Days" labelBn="দিন" />
+            <TimeUnit value={time?.hours ?? 0} label="Hours" labelBn="ঘণ্টা" />
+            <TimeUnit value={time?.minutes ?? 0} label="Min" labelBn="মিনিট" />
+            <TimeUnit value={time?.seconds ?? 0} label="Sec" labelBn="সেকেন্ড" />
+          </div>
+          <div className="hidden sm:flex items-start justify-center gap-6">
+            <TimeUnit value={time?.days ?? 0} label="Days" labelBn="দিন" />
+            <div className="text-4xl font-black mt-8 opacity-40">:</div>
+            <TimeUnit value={time?.hours ?? 0} label="Hours" labelBn="ঘণ্টা" />
+            <div className="text-4xl font-black mt-8 opacity-40">:</div>
+            <TimeUnit value={time?.minutes ?? 0} label="Min" labelBn="মিনিট" />
+            <div className="text-4xl font-black mt-8 opacity-40">:</div>
+            <TimeUnit value={time?.seconds ?? 0} label="Sec" labelBn="সেকেন্ড" />
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center gap-6 w-full sm:w-auto">
           <Link
             href="/community-pet-care/contribute"
-            className="group inline-flex items-center gap-2 bg-white text-(--bpa-green) px-8 py-4 rounded-2xl font-bold text-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+            className="group inline-flex items-center justify-center gap-2 bg-white text-(--bpa-green) w-full sm:w-auto px-6 sm:px-8 py-4 rounded-2xl font-bold text-base sm:text-lg hover:shadow-xl hover:-translate-y-1 transition-all text-center"
           >
             Get Your BPA Community Care Partner Card
-            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform shrink-0" />
           </Link>
           {program.offerEndAt && (
              <p className="text-green-100 text-sm font-semibold">

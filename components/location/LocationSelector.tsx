@@ -117,6 +117,7 @@ function LSelect({
   required,
   disabled,
   placeholder,
+  mounted,
 }: {
   id: string;
   labelText: string;
@@ -127,7 +128,11 @@ function LSelect({
   required?: boolean;
   disabled?: boolean;
   placeholder: string;
+  mounted?: boolean;
 }) {
+  // During SSR and initial client render (before hydration), ignore loading
+  // so the disabled prop is deterministic between server and client.
+  const isDisabled = Boolean(disabled) || (mounted && !!loading) || options.length === 0;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={id} className="text-sm font-medium text-gray-700">
@@ -139,7 +144,7 @@ function LSelect({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        disabled={disabled || loading || options.length === 0}
+        disabled={isDisabled}
         className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-800
                    focus:border-(--bpa-green) focus:outline-none focus:ring-2 focus:ring-(--bpa-green)/20
                    disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
@@ -196,6 +201,13 @@ export default function LocationSelector({
   const [loadingUnion, setLoadingUnion] = useState(false);
 
   const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // ── Hydration guard ────────────────────────────────────────────────────────
+  // Prevents hydration mismatch: on server + first client render,
+  // loading states are ignored in the disabled prop so the server-rendered
+  // HTML matches the initial client render. Once mounted, loading is included.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const emit = useCallback(
     (patch: Partial<LocationValue>) => onChange?.({ ...value, ...patch }),
@@ -318,6 +330,7 @@ export default function LocationSelector({
           required={required('DIVISION')}
           disabled={disabled}
           placeholder={`Select ${label('division', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -339,6 +352,7 @@ export default function LocationSelector({
           required={required('DISTRICT')}
           disabled={disabled || !value.divisionId}
           placeholder={`Select ${label('district', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -356,6 +370,7 @@ export default function LocationSelector({
           required={required('UPAZILA')}
           disabled={disabled || !value.districtId}
           placeholder={`Select ${label('upazila', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -374,6 +389,7 @@ export default function LocationSelector({
           required={required('CITY_CORPORATION')}
           disabled={disabled}
           placeholder={`Select ${label('cityCorporation', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -391,6 +407,7 @@ export default function LocationSelector({
           required={required('CITY_ZONE')}
           disabled={disabled || !value.cityCorporationId}
           placeholder={`Select ${label('zone', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -405,6 +422,7 @@ export default function LocationSelector({
           required={required('WARD')}
           disabled={disabled || !value.cityZoneId}
           placeholder={`Select ${label('ward', locale)}`}
+          mounted={mounted}
         />
       )}
 
@@ -419,6 +437,7 @@ export default function LocationSelector({
           required={required('UNION')}
           disabled={disabled || !value.upazilaId}
           placeholder={`Select ${label('union', locale)}`}
+          mounted={mounted}
         />
       )}
 

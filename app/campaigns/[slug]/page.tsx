@@ -14,7 +14,7 @@ import {
   Activity, ShieldCheck, CreditCard, FlaskConical,
   Target, TrendingUp,
 } from 'lucide-react';
-import type { CampaignSession, CampaignStatus, CampaignType, CampaignService } from '@/types/bpa.types';
+import type { CampaignSession, CampaignStatus, CampaignType, CampaignService, CampaignMedia } from '@/types/bpa.types';
 import { formatMoney, toDisplayString, getCampaignMediaUrl, getCampaignRoleUrl } from '@/lib/utils/format';
 
 export const revalidate = 60;
@@ -341,7 +341,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   ].filter(Boolean) as Array<{ label: string; date: string; done: boolean }>;
 
   // ── Media by role ─────────────────────────────────────────────────
-  const galleryMedia  = (campaign.media ?? []).filter((m: any) => m.role === 'gallery').sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+  const galleryMedia  = (campaign.media ?? []).filter((m: CampaignMedia) => m.role === 'gallery').sort((a: CampaignMedia, b: CampaignMedia) => a.sortOrder - b.sortOrder);
 
   // Banner: media-array-only — no coverImage fallback so blank box never renders
   const heroBannerUrl   = getCampaignRoleUrl(campaign, 'hero')

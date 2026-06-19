@@ -9,7 +9,7 @@ export interface DonationPurpose {
   shortDescriptionBn?: string;
   icon?: string;
   imageUrl?: string;
-  suggestedAmounts?: any;
+  suggestedAmounts?: number[];
   impactTextEn?: string;
   impactTextBn?: string;
 }
@@ -75,7 +75,7 @@ export interface DonationPageSettings {
   showDonorWall: boolean;
   showTransparency: boolean;
   showQrSection: boolean;
-  faqJson?: any;
+  faqJson?: Record<string, unknown>;
 }
 
 export interface DonationTransparencyReport {

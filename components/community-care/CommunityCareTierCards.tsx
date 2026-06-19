@@ -27,7 +27,7 @@ export default function CommunityCareTierCards({ tiers, compact = false }: Props
   const sortedTiers = [...tiers].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   return (
-    <div className={`grid gap-8 ${compact ? 'lg:grid-cols-3' : 'lg:grid-cols-3'} items-stretch`}>
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 items-stretch">
       {sortedTiers.map((tier) => {
         const Icon = TIER_ICONS[tier.slug] || Star;
         const colorClass = TIER_COLORS[tier.slug] || TIER_COLORS.premium;
@@ -43,7 +43,7 @@ export default function CommunityCareTierCards({ tiers, compact = false }: Props
             }`}
           >
             {isPremium && (
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bpa-green) text-white px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--bpa-green) text-white px-3 py-1 sm:px-4 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest shadow-lg whitespace-nowrap">
                 Most Popular
               </div>
             )}

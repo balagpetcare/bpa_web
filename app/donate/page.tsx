@@ -162,7 +162,7 @@ export default async function DonatePage() {
 
               {/* Impact counters */}
               {settings.showImpactCounters && (
-                <div className="grid grid-cols-3 gap-4 pt-2 border-t border-white/10">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 pt-2 border-t border-white/10">
                   {[
                     { value: `৳${totalRaisedBdt}`, label: 'Total Raised' },
                     { value: '15,000+', label: 'Animals Helped' },
@@ -171,9 +171,9 @@ export default async function DonatePage() {
                     { value: '450+', label: 'Rescues Done' },
                     { value: '5,000+', label: 'Donors' },
                   ].map(({ value, label }) => (
-                    <div key={label} className="space-y-0.5">
-                      <p className="text-2xl font-extrabold text-(--bpa-green)">{value}</p>
-                      <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+                    <div key={label} className="space-y-0.5 min-w-0">
+                      <p className="text-lg sm:text-2xl font-extrabold text-(--bpa-green) break-words">{value}</p>
+                      <p className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
                     </div>
                   ))}
                 </div>

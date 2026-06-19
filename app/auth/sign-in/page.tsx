@@ -30,8 +30,8 @@ function SignInContent() {
     try {
       await login(email, password);
       router.push(next);
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }
@@ -48,8 +48,8 @@ function SignInContent() {
         // In local development
         alert(`Dev OTP: ${res.devOtp}`);
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
@@ -62,8 +62,8 @@ function SignInContent() {
     try {
       await verifyOtp(phone, otp);
       router.push(next);
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
       setLoading(false);
     }

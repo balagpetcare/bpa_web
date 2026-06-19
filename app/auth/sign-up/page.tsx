@@ -52,8 +52,8 @@ export default function SignUpPage() {
       } else {
         router.push('/');
       }
-    } catch (err: any) {
-      setError(err.message || 'Registration failed. Please check your details and try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Registration failed. Please check your details and try again.');
     } finally {
       setLoading(false);
     }

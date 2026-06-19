@@ -18,7 +18,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: any) => Promise<void>;
+  register: (data: Record<string, unknown>) => Promise<void>;
   requestOtp: (phone: string) => Promise<{ success: boolean; devOtp?: string }>;
   verifyOtp: (phone: string, otp: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -51,26 +51,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await apiPost<any>('/auth/login', { email, password });
+    const res = await apiPost<{ user: User }>('/auth/login', { email, password });
     if (res.success) {
       setUser(res.data.user);
     }
   };
 
-  const register = async (data: any) => {
-    const res = await apiPost<any>('/auth/register/email', data);
+  const register = async (data: Record<string, unknown>) => {
+    const res = await apiPost<{ user: User }>('/auth/register/email', data);
     if (res.success) {
       setUser(res.data.user);
     }
   };
 
   const requestOtp = async (phone: string) => {
-    const res = await apiPost<any>('/auth/mobile/request-otp', { phone });
+    const res = await apiPost<{ devOtp?: string; success: boolean }>('/auth/mobile/request-otp', { phone });
     return res.data;
   };
 
   const verifyOtp = async (phone: string, otp: string) => {
-    const res = await apiPost<any>('/auth/mobile/verify-otp', { phone, otp });
+    const res = await apiPost<{ user: User }>('/auth/mobile/verify-otp', { phone, otp });
     if (res.success) {
       setUser(res.data.user);
     }
