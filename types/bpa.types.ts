@@ -207,6 +207,20 @@ export interface CampaignFaqItem {
   answer: string;
 }
 
+export interface CampaignFaq {
+  id: string;
+  campaignId: string;
+  questionEn: string;
+  questionBn: string | null;
+  answerEn: string;
+  answerBn: string | null;
+  category: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CampaignDetail extends CampaignListItem {
   sessions: CampaignSession[];
   services: CampaignService[];

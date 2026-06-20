@@ -15,7 +15,7 @@ export const revalidate = 3600;
 export default async function TransparencyPage() {
   let reports: DonationTransparencyReport[] = [];
   try {
-    const res = await apiFetch('/public/donations/transparency-reports');
+    const res = await apiFetch('/public/transparency-reports?status=published');
     reports = (res.data as DonationTransparencyReport[]) || [];
   } catch (err) {
     console.error('Failed to load transparency reports', err);

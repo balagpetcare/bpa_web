@@ -47,8 +47,8 @@ async function logInternalEvent(
       metadata
     };
 
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
-    await fetch(`${apiBase}/public/analytics/events`, {
+    const origin = (await import('@/lib/utils/api-url')).getApiOrigin();
+    await fetch(`${origin}/api/v1/public/analytics/events`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

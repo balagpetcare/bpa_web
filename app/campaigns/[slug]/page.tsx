@@ -7,14 +7,14 @@ import CountdownTimer from '@/components/campaigns/CountdownTimer';
 import CampaignStickyBar from '@/components/campaigns/CampaignStickyBar';
 import CampaignJsonLd from '@/components/campaigns/CampaignJsonLd';
 import CampaignGallery from '@/components/campaigns/CampaignGallery';
-import { getCampaignBySlug, getCampaignsList } from '@/lib/api/campaigns';
+import { getCampaignBySlug, getCampaignsList, getCampaignFaqs } from '@/lib/api/campaigns';
 import {
   CalendarDays, MapPin, Users, Syringe, Clock, BanknoteIcon,
   ArrowLeft, CheckCircle, AlertCircle, Info, ChevronDown, Building2,
   Activity, ShieldCheck, CreditCard, FlaskConical,
   Target, TrendingUp,
 } from 'lucide-react';
-import type { CampaignSession, CampaignStatus, CampaignType, CampaignService, CampaignMedia } from '@/types/bpa.types';
+import type { CampaignSession, CampaignStatus, CampaignType, CampaignService, CampaignMedia, CampaignFaq } from '@/types/bpa.types';
 import { formatMoney, toDisplayString, getCampaignMediaUrl, getCampaignRoleUrl } from '@/lib/utils/format';
 
 export const revalidate = 60;
@@ -268,9 +268,11 @@ function VaccineCard({ service }: { service: CampaignService }) {
 export default async function CampaignDetailPage({ params }: PageProps) {
   const { slug } = await params;
   let campaign: Awaited<ReturnType<typeof getCampaignBySlug>>;
+  let campaignFaqs: CampaignFaq[] = [];
 
   try {
     campaign = await getCampaignBySlug(slug, { next: { revalidate: 60, tags: [`campaign-${slug}`] } });
+    campaignFaqs = await getCampaignFaqs(slug, { next: { revalidate: 60 } });
   } catch {
     notFound();
   }
@@ -692,17 +694,19 @@ export default async function CampaignDetailPage({ params }: PageProps) {
             )}
 
             {/* ─── SECTION 8: FAQ ──────────────────────────────── */}
-            {campaign.faq && campaign.faq.length > 0 && (
+            {campaignFaqs.length > 0 && (
               <section id="faq">
                 <SectionHeading><Info size={20} className="text-(--bpa-green)" />Frequently Asked Questions</SectionHeading>
                 <div className="space-y-2">
-                  {campaign.faq.map((item, i) => (
-                    <details key={i} className="group border border-gray-200 rounded-xl overflow-hidden bg-white">
+                  {campaignFaqs.map((faq) => (
+                    <details key={faq.id} className="group border border-gray-200 rounded-xl overflow-hidden bg-white">
                       <summary className="flex items-center justify-between gap-3 p-4 cursor-pointer list-none font-semibold text-sm text-(--bpa-navy) hover:bg-gray-50 transition-colors">
-                        {item.question}
+                        {faq.questionBn || faq.questionEn}
                         <ChevronDown size={16} className="text-gray-400 shrink-0 group-open:rotate-180 transition-transform" />
                       </summary>
-                      <div className="px-4 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100">{item.answer}</div>
+                      <div className="px-4 pb-4 text-sm text-gray-600 leading-relaxed border-t border-gray-100">
+                        {faq.answerBn || faq.answerEn}
+                      </div>
                     </details>
                   ))}
                 </div>

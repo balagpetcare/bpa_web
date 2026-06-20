@@ -2,6 +2,7 @@ import { apiFetch, apiPost } from '@/lib/api';
 import type {
   CampaignListItem,
   CampaignDetail,
+  CampaignFaq,
   CampaignRegistration,
   CampaignWaitlistEntry,
   CertificateVerification,
@@ -84,4 +85,13 @@ export async function verifyCertificate(verifyToken: string, fetchOptions?: Requ
     fetchOptions,
   );
   return res.data;
+}
+
+export async function getCampaignFaqs(slug: string, fetchOptions?: RequestInit): Promise<CampaignFaq[]> {
+  try {
+    const res = await apiFetch<CampaignFaq[]>(`/public/campaigns/${slug}/faqs`, fetchOptions);
+    return res.data;
+  } catch {
+    return [];
+  }
 }
