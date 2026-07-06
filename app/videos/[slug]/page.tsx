@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getPublicVideoDetail } from '@/lib/api/content';
-import { Video, ArrowLeft, Calendar, Eye, CalendarCheck, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Calendar, Eye, CalendarCheck, ExternalLink } from 'lucide-react';
 import LikeButton from '@/components/content/LikeButton';
 import ShareButton from '@/components/content/ShareButton';
 import CommentSection from '@/components/content/CommentSection';
@@ -18,6 +18,8 @@ interface Props {
 }
 
 // Youtube parser logic moved into BPAVideoPlayer
+
+type VideoSourceType = 'youtube' | 'upload';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const resolvedParams = await params;
@@ -62,7 +64,7 @@ export default async function VideoDetailPage({ params }: Props) {
 
         {/* Custom Video Player */}
         <BPAVideoPlayer
-          videoSourceType={video.videoSourceType as any}
+          videoSourceType={(video.videoSourceType ?? undefined) as VideoSourceType | undefined}
           videoUrl={video.videoUrl}
           videoFileUrl={video.videoFileUrl}
           videoPosterUrl={video.videoPosterUrl}

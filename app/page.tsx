@@ -1,42 +1,97 @@
 import type { Metadata } from 'next';
 import EnterpriseHeroSection from '@/components/sections/EnterpriseHeroSection';
-import StatsSection from '@/components/sections/StatsSection';
-import MissionPreviewSection from '@/components/sections/MissionPreviewSection';
-import VisionPreviewSection from '@/components/sections/VisionPreviewSection';
-import LatestNewsSection from '@/components/sections/LatestNewsSection';
-import UpcomingEventsSection from '@/components/sections/UpcomingEventsSection';
-import CommitteePreviewSection from '@/components/sections/CommitteePreviewSection';
-import CtaSection from '@/components/sections/CtaSection';
-import PartnersSection from '@/components/sections/PartnersSection';
-import CampaignsSection from '@/components/sections/CampaignsSection';
-import { MembershipVolunteerSection, SuccessStoriesSection, findCustomSection } from '@/components/sections/EngagementSections';
-import CommunityCareFundSection from '@/components/sections/CommunityCareFundSection';
-import TransparencyTeaserSection from '@/components/sections/TransparencyTeaserSection';
-import PetCensusCTASection from '@/components/sections/PetCensusCTASection';
-import PetSmartSolutionPreviewSection from '@/components/sections/PetSmartSolutionPreviewSection';
-import DonationCTASection from '@/components/donations/DonationCTASection';
-import FeaturedVideosSection from '@/components/sections/FeaturedVideosSection';
-import CommunityPostsSection from '@/components/sections/CommunityPostsSection';
-import { getNewsList } from '@/lib/api/news';
-import { getEventsList } from '@/lib/api/events';
-import { getCommitteeMembers } from '@/lib/api/committee';
-import { getFeaturedCampaigns } from '@/lib/api/campaigns';
-import { getSeoData } from '@/lib/api/seo';
 import { getPublicHomepage } from '@/lib/api/homepage';
-import { getPublicZones, getCareFundOverview } from '@/lib/api/community-care';
-import { getMembershipOverview } from '@/lib/api/community-membership';
-import { getPetCensusSettings } from '@/lib/api/pet-census';
-import { getContentHomepage } from '@/lib/api/content';
-import { normalizeMembershipOverview } from '@/lib/community-care-normalizer';
+import { getSeoData } from '@/lib/api/seo';
 import { buildMetadata } from '@/lib/seo';
-import LaunchOfferCountdown from '@/components/community-care/LaunchOfferCountdown';
-import CommunityCareTierCards from '@/components/community-care/CommunityCareTierCards';
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
+import type { HeroSlide } from '@/types/bpa.types';
+import {
+  QuickActionSection,
+  AboutSection,
+  ProgramsSection,
+  FeaturedCampaignSection,
+  HowItWorksSection,
+  ImpactSection,
+  AdoptionRescueSection,
+  DonationImpactSection,
+  PartnersCtaSection,
+  NewsPreviewSection,
+  FinalCtaSection,
+} from '@/components/home/HomepageSections';
 
-// force-dynamic: homepage uses cache:'no-store' on CMS data so it must render
-// fresh on every request — revalidate=N would conflict and serve stale HTML.
 export const dynamic = 'force-dynamic';
+
+const fallbackSlides: HeroSlide[] = [
+  {
+    id: 'bpa-fallback-1',
+    locale: 'en',
+    title: 'BPA Cat Vaccination Campaign 2026',
+    badgeText: 'Bangladesh Pet Association',
+    eyebrow: 'National campaign',
+    headline: 'Protect more pets through a nationwide vaccination drive',
+    body: 'Join vaccination registration, community outreach, and partner clinic coordination for a healthier pet ecosystem in Bangladesh.',
+    campaignTag: 'vaccination-2026',
+    status: 'published',
+    isActive: true,
+    mediaType: 'image',
+    overlayPosition: 'left',
+    ctaType: 'internal',
+    ctaLabel: 'Register for Campaign',
+    ctaHref: '/campaigns',
+    ctaTarget: '_self',
+    secondaryCtaType: 'internal',
+    secondaryCtaLabel: 'Donate Now',
+    secondaryCtaHref: '/donate',
+    secondaryCtaTarget: '_self',
+    desktopImage: { id: 'hero-1', url: '/window.svg', mimeType: 'image/svg+xml', altText: 'Campaign banner' },
+    mobileImage: null,
+    video: null,
+    stats: [
+      { label: 'Partner clinics', value: '120+' },
+      { label: 'Active volunteers', value: '500+' },
+      { label: 'District reach', value: '64' },
+    ],
+    countdownLabel: null,
+    countdownTargetAt: null,
+    startAt: null,
+    endAt: null,
+    sortOrder: 1,
+  },
+  {
+    id: 'bpa-fallback-2',
+    locale: 'en',
+    title: 'Adopt, Rescue, and Protect Pets',
+    badgeText: 'Community action',
+    eyebrow: 'Compassion in action',
+    headline: 'Make adoption, rescue, and support easy to find',
+    body: 'A trusted platform for people who want to help animals through adoption, rescue reporting, or direct support.',
+    campaignTag: 'adoption-rescue',
+    status: 'published',
+    isActive: true,
+    mediaType: 'image',
+    overlayPosition: 'left',
+    ctaType: 'internal',
+    ctaLabel: 'Adopt a Pet',
+    ctaHref: '/adoption',
+    ctaTarget: '_self',
+    secondaryCtaType: 'internal',
+    secondaryCtaLabel: 'Report Rescue',
+    secondaryCtaHref: '/contact',
+    secondaryCtaTarget: '_self',
+    desktopImage: { id: 'hero-2', url: '/globe.svg', mimeType: 'image/svg+xml', altText: 'Community support' },
+    mobileImage: null,
+    video: null,
+    stats: [
+      { label: 'Animals helped', value: '15k+' },
+      { label: 'Campaigns', value: '40+' },
+      { label: 'Volunteer teams', value: '80+' },
+    ],
+    countdownLabel: null,
+    countdownTargetAt: null,
+    startAt: null,
+    endAt: null,
+    sortOrder: 2,
+  },
+];
 
 export async function generateMetadata(): Promise<Metadata> {
   const [seo, homepage] = await Promise.all([
@@ -46,121 +101,36 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return buildMetadata(
     {
-      title: homepage?.homepage?.title || 'Bangladesh Pet Association - Caring for Pets, Building a Community',
-      description: homepage?.homepage?.description || 'The Bangladesh Pet Association promotes responsible pet ownership, animal welfare, and community building for pet lovers across Bangladesh.',
+      title:
+        homepage?.homepage?.title ||
+        'Bangladesh Pet Association - Trusted national animal welfare platform',
+      description:
+        homepage?.homepage?.description ||
+        'Bangladesh Pet Association promotes vaccination campaigns, adoption, rescue, donation, awareness, and veterinary support across Bangladesh.',
       canonical: '/',
     },
     seo,
   );
 }
 
-
 export default async function HomePage() {
-  const [homepageResult, newsResult, eventsResult, committeeResult, campaignsResult, zonesResult, overviewResult, membershipOverviewResult, censusSettingsResult, contentHomepageResult] = await Promise.allSettled([
-    getPublicHomepage('en', { cache: 'no-store' }),
-    getNewsList({ limit: 3, isFeatured: undefined }, { next: { revalidate: 300, tags: ['news-list'] } }),
-    getEventsList({ limit: 3, upcoming: true }, { next: { revalidate: 300, tags: ['events-list'] } }),
-    getCommitteeMembers({ next: { revalidate: 3600, tags: ['committee'] } }),
-    getFeaturedCampaigns({ next: { revalidate: 300, tags: ['campaigns-featured'] } } as RequestInit),
-    getPublicZones({ next: { revalidate: 300, tags: ['community-zones'] } } as RequestInit),
-    getCareFundOverview({ next: { revalidate: 300, tags: ['care-fund-overview'] } } as RequestInit),
-    getMembershipOverview({ next: { revalidate: 300, tags: ['membership-overview'] } } as RequestInit),
-    getPetCensusSettings(),
-    getContentHomepage(),
-  ]);
-
-  const homepage = homepageResult.status === 'fulfilled' ? homepageResult.value : null;
-  const news = newsResult.status === 'fulfilled' ? newsResult.value.items : [];
-  const events = eventsResult.status === 'fulfilled' ? eventsResult.value.items : [];
-  const committee = committeeResult.status === 'fulfilled' ? committeeResult.value : [];
-  const campaignData = campaignsResult.status === 'fulfilled'
-    ? campaignsResult.value
-    : { featured: [], registrationOpen: [], upcoming: [] };
-  const zones = zonesResult.status === 'fulfilled' ? zonesResult.value : [];
-  const careFundOverview = overviewResult.status === 'fulfilled' ? overviewResult.value : null;
-  
-  const rawMembershipOverview = membershipOverviewResult.status === 'fulfilled' ? membershipOverviewResult.value : null;
-  const membershipOverview = normalizeMembershipOverview(rawMembershipOverview);
-
-  const censusSettings = censusSettingsResult.status === 'fulfilled' ? censusSettingsResult.value : null;
-  const contentHomepage = contentHomepageResult.status === 'fulfilled' ? contentHomepageResult.value : null;
-
-  const sections = homepage?.sections ?? [];
-  const section = (type: string) => sections.find((item) => item.type === type) ?? null;
-  const membership = findCustomSection(sections, 'membership');
-  const volunteer = findCustomSection(sections, 'volunteer');
-  const success = findCustomSection(sections, 'success_stories');
+  const homepage = await getPublicHomepage('en', { cache: 'no-store' }).catch(() => null);
+  const heroSlides = homepage?.heroSlides?.length ? homepage.heroSlides : fallbackSlides;
 
   return (
     <>
-      <EnterpriseHeroSection slides={homepage?.heroSlides ?? []} />
-      
-      {/* Launch Offer & Tiers */}
-      {membershipOverview && (
-        <section className="py-20 bg-white overflow-hidden">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <p className="text-(--bpa-green) font-semibold text-sm uppercase tracking-widest mb-3">BPA Community Care Partner Card</p>
-              <h2 className="text-3xl sm:text-5xl font-black text-(--bpa-navy) mb-4">
-                Become a Founding Member
-              </h2>
-              <p className="text-gray-500 text-lg max-w-2xl mx-auto">
-                Unlock long-term pet care benefits and support our community clinics.
-              </p>
-            </div>
-
-            <LaunchOfferCountdown program={membershipOverview.program} />
-
-            <div className="mt-16">
-               <CommunityCareTierCards 
-                 tiers={membershipOverview.tiers} 
-                 compact={true}
-               />
-            </div>
-
-            <div className="text-center mt-16">
-              <Link
-                href="/community-pet-care"
-                className="inline-flex items-center gap-2 text-(--bpa-green) font-bold text-lg hover:underline"
-              >
-                View All Benefits & Service Comparison <ChevronRight size={20} />
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
-      <StatsSection section={section('stats')} />
-      <MissionPreviewSection section={section('mission')} />
-      <CampaignsSection
-        section={section('campaigns')}
-        featured={campaignData.featured}
-        registrationOpen={campaignData.registrationOpen}
-        upcoming={campaignData.upcoming}
-      />
-      <CommunityCareFundSection overview={careFundOverview} zones={zones} />
-      <TransparencyTeaserSection />
-      <DonationCTASection
-        title="Help Us Save More Lives"
-        subtitle="Your donation funds vaccines, emergency surgery, daily meals, and rescue operations for animals across Bangladesh. Every contribution is tracked and reported."
-        theme="green"
-      />
-      <PetCensusCTASection settings={censusSettings} />
-      {contentHomepage && (
-        <>
-          <FeaturedVideosSection videos={contentHomepage.featuredVideos} />
-          <CommunityPostsSection posts={contentHomepage.communityPosts} />
-        </>
-      )}
-      <MembershipVolunteerSection membership={membership} volunteer={volunteer} />
-      <LatestNewsSection items={news} section={section('news')} />
-      <UpcomingEventsSection items={events} section={section('events')} />
-      <VisionPreviewSection section={section('vision')} />
-      <SuccessStoriesSection section={success} />
-      <CommitteePreviewSection members={committee} section={section('committee')} />
-      <PetSmartSolutionPreviewSection />
-      <CtaSection section={section('cta')} />
-      <PartnersSection section={section('partners')} partners={homepage?.partners ?? []} />
+      <EnterpriseHeroSection slides={heroSlides} />
+      <QuickActionSection />
+      <AboutSection />
+      <ProgramsSection />
+      <FeaturedCampaignSection />
+      <HowItWorksSection />
+      <ImpactSection />
+      <AdoptionRescueSection />
+      <DonationImpactSection />
+      <PartnersCtaSection />
+      <NewsPreviewSection />
+      <FinalCtaSection />
     </>
   );
 }

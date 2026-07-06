@@ -1,6 +1,4 @@
 import { apiFetch, apiPost, apiDelete } from '../api';
-import type { ApiResponse } from '@/types/bpa.types';
-
 export interface Author {
   id: string;
   name: string;
@@ -136,11 +134,11 @@ export async function addPostComment(postId: string, body: string) {
 }
 
 export async function reportContent(payload: { postId?: string; commentId?: string; reason: string }) {
-  const res = await apiPost<any>('/content/report', payload);
+  const res = await apiPost<{ success: boolean }>('/content/report', payload);
   return res.data;
 }
 
 export async function deletePostComment(commentId: string) {
-  const res = await apiDelete<any>(`/content/comments/${commentId}`);
+  const res = await apiDelete<{ success: boolean }>(`/content/comments/${commentId}`);
   return res.data;
 }
