@@ -7,6 +7,7 @@ import { Menu, User, ChevronDown, Heart } from 'lucide-react';
 import MobileNav from './MobileNav';
 import { NAV_ITEMS, type NavItem } from '@/lib/navigation';
 import { getPublicSiteSettings } from '@/lib/api/site-settings';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 import { useAuth } from '@/context/AuthContext';
 
 // ─── Desktop Dropdown Item ────────────────────────────────────────────────────
@@ -117,8 +118,10 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    getPublicSiteSettings().then((s) => setPrimaryLogoUrl(s.primaryLogoUrl));
+    getPublicSiteSettings().then((s) => setPrimaryLogoUrl(resolveMediaUrl(s.primaryLogoUrl)));
   }, []);
+
+  const avatarUrl = resolveMediaUrl(user?.avatarUrl);
 
   return (
     <>
@@ -162,9 +165,9 @@ export default function Header() {
                   className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
                 >
                   <div className="h-7 w-7 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-                    {user.avatarUrl ? (
+                    {avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={user.avatarUrl} alt={user.name} className="h-full w-full object-cover" />
+                      <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" />
                     ) : (
                       <User size={16} className="text-gray-500" />
                     )}

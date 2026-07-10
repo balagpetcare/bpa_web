@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -9,7 +9,7 @@ import {
   Zap,
 } from 'lucide-react';
 import type { CampaignListItem, CampaignType, CampaignStatus, HomepageSection } from '@/types/bpa.types';
-import { normalizeCampaignPricing, getCampaignMediaUrl } from '@/lib/utils/format';
+import { normalizeCampaignPricing, getCampaignMediaUrl, resolveMediaUrl } from '@/lib/utils/format';
 
 // ─── Types ─────────────────────────────────────────────────────────
 
@@ -68,7 +68,11 @@ const TYPE_COLORS: Record<CampaignType, string> = {
 
 function normalizeCampaign(c: CampaignListItem): NormalizedCampaign {
   const pricing = normalizeCampaignPricing(c);
-  const coverUrl = getCampaignMediaUrl(c, 'hero') || getCampaignMediaUrl(c, 'thumbnail') || c.coverImage?.url || '';
+  const coverUrl =
+    getCampaignMediaUrl(c, 'hero') ||
+    getCampaignMediaUrl(c, 'thumbnail') ||
+    resolveMediaUrl(c.coverImage?.url) ||
+    '';
 
   const now = new Date();
   const regClose = c.registrationCloseAt ? new Date(c.registrationCloseAt) : null;

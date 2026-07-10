@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Image from 'next/image';
 import { X, Mail, Phone } from 'lucide-react';
 import type { CommitteeMember } from '@/types/bpa.types';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface CommitteeMemberModalProps {
   member: CommitteeMember | null;
@@ -27,6 +28,7 @@ export default function CommitteeMemberModal({ member, onClose }: CommitteeMembe
   }, [member, onClose]);
 
   if (!member) return null;
+  const photoUrl = resolveMediaUrl(member.photoUrl);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -55,9 +57,9 @@ export default function CommitteeMemberModal({ member, onClose }: CommitteeMembe
 
         {/* Photo header */}
         <div className="relative h-56 bg-(--bpa-green) overflow-hidden rounded-t-3xl">
-          {member.photoUrl ? (
+          {photoUrl ? (
             <Image
-              src={member.photoUrl}
+              src={photoUrl}
               alt={member.name}
               fill
               sizes="(max-width: 640px) 100vw, 512px"

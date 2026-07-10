@@ -9,8 +9,9 @@ import FormField from '@/components/ui/FormField';
 import Alert from '@/components/ui/Alert';
 import { CheckCircle, CreditCard } from 'lucide-react';
 import { assertSafePaymentUrl } from '@/lib/utils/payment-redirect';
+import { getApiOrigin } from '@/lib/utils/api-url';
 
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_ORIGIN = getApiOrigin();
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required').max(120),

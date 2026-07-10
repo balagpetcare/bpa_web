@@ -3,6 +3,7 @@ import Image from 'next/image';
 import SectionHeader from '@/components/ui/SectionHeader';
 import LinkButton from '@/components/ui/LinkButton';
 import type { HomepageSection, NewsListItem } from '@/types/bpa.types';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface LatestNewsSectionProps {
   items: NewsListItem[];
@@ -25,35 +26,38 @@ export default function LatestNewsSection({ items, section }: LatestNewsSectionP
           <LinkButton href={section?.ctaHref || '/news'} variant="outline" size="sm">{section?.ctaLabel || 'View All News'}</LinkButton>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {items.slice(0, 3).map((article) => (
-            <Link key={article.id} href={`/news/${article.slug}`} className="group block">
-              <article className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
-                <div className="relative aspect-[16/9] bg-gray-100">
-                  {article.coverImageUrl ? (
-                    <Image src={article.coverImageUrl} alt={article.title} fill className="object-cover" />
-                  ) : (
-                    <div className="absolute inset-0 bg-(--bpa-green-light) flex items-center justify-center">
-                      <span className="text-(--bpa-green) text-xs font-medium">BPA News</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-5 flex flex-col flex-1">
-                  {article.categoryName && (
-                    <span className="text-xs font-medium text-(--bpa-green) uppercase tracking-wide mb-2">
-                      {article.categoryName}
-                    </span>
-                  )}
-                  <h3 className="font-bold text-(--bpa-navy) mb-2 group-hover:text-(--bpa-green) transition-colors line-clamp-2">
-                    {article.title}
-                  </h3>
-                  {article.excerpt && (
-                    <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4 flex-1">{article.excerpt}</p>
-                  )}
-                  <time className="text-xs text-gray-400 mt-auto">{formatDate(article.publishedAt)}</time>
-                </div>
-              </article>
-            </Link>
-          ))}
+          {items.slice(0, 3).map((article) => {
+            const coverImageUrl = resolveMediaUrl(article.coverImageUrl);
+            return (
+              <Link key={article.id} href={`/news/${article.slug}`} className="group block">
+                <article className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
+                  <div className="relative aspect-[16/9] bg-gray-100">
+                    {coverImageUrl ? (
+                      <Image src={coverImageUrl} alt={article.title} fill className="object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 bg-(--bpa-green-light) flex items-center justify-center">
+                        <span className="text-(--bpa-green) text-xs font-medium">BPA News</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5 flex flex-col flex-1">
+                    {article.categoryName && (
+                      <span className="text-xs font-medium text-(--bpa-green) uppercase tracking-wide mb-2">
+                        {article.categoryName}
+                      </span>
+                    )}
+                    <h3 className="font-bold text-(--bpa-navy) mb-2 group-hover:text-(--bpa-green) transition-colors line-clamp-2">
+                      {article.title}
+                    </h3>
+                    {article.excerpt && (
+                      <p className="text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4 flex-1">{article.excerpt}</p>
+                    )}
+                    <time className="text-xs text-gray-400 mt-auto">{formatDate(article.publishedAt)}</time>
+                  </div>
+                </article>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>

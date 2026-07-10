@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ShieldCheck, ShieldAlert, CalendarDays, Syringe, User, MapPin, Download } from 'lucide-react';
 import { verifyCertificate } from '@/lib/api/campaigns';
+import { getApiOrigin } from '@/lib/utils/api-url';
 
 interface PageProps {
   params: Promise<{ token: string }>;
@@ -138,7 +139,7 @@ export default async function CertificateVerifyPage({ params }: PageProps) {
         {isValid && (
           <div className="mt-4">
             <a
-              href={`${process.env.NEXT_PUBLIC_API_URL ?? ''}/api/v1/public/campaigns/certificate-pdf/${encodeURIComponent(cert!.verifyToken)}`}
+              href={`${getApiOrigin()}/api/v1/public/campaigns/certificate-pdf/${encodeURIComponent(cert!.verifyToken)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full rounded-xl border border-(--bpa-green) text-(--bpa-green) py-2.5 text-sm font-medium hover:bg-(--bpa-green-light) transition-colors"

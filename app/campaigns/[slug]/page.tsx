@@ -34,7 +34,7 @@ interface PageProps { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   try {
-    const campaign = await getCampaignBySlug(slug, { next: { revalidate: 60 } });
+    const campaign = await getCampaignBySlug(slug, undefined, { next: { revalidate: 60 } });
     if (!campaign) return {};
     const desc = campaign.description ?? `Register your pets for ${campaign.title} by Bangladesh Pet Association.`;
     const heroImg = getCampaignMediaUrl(campaign, 'hero');
@@ -271,7 +271,7 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   let campaignFaqs: CampaignFaq[] = [];
 
   try {
-    campaign = await getCampaignBySlug(slug, { next: { revalidate: 60, tags: [`campaign-${slug}`] } });
+    campaign = await getCampaignBySlug(slug, undefined, { next: { revalidate: 60, tags: [`campaign-${slug}`] } });
     campaignFaqs = await getCampaignFaqs(slug, { next: { revalidate: 60 } });
   } catch {
     notFound();

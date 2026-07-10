@@ -9,8 +9,11 @@ import {
 } from 'lucide-react';
 import { AutoDownloadFile } from '@/components/common/AutoDownloadFile';
 import Button from '@/components/ui/Button';
+import { getApiOrigin } from '@/lib/utils/api-url';
 import Alert from '@/components/ui/Alert';
-import LocationSelector, { type LocationValue } from '@/components/location/LocationSelector';
+import type { LocationValue } from '@/components/location/LocationSelector';
+import BookingLocationPicker from '@/components/location/BookingLocationPicker';
+import NotifyMeForm from '@/components/campaigns/NotifyMeForm';
 import { getCampaignBySlug, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
 import { ApiError } from '@/lib/api';
 import { normalizeCampaignPricing, formatMoney } from '@/lib/utils/format';
@@ -360,6 +363,12 @@ export default function RegistrationFormWrapper() {
   const [submitting, setSubmitting] = useState(false);
   const [locationSearch, setLocationSearch] = useState('');
 
+  // Step 1 starts with a location-first picker (Dhaka City / Outside Dhaka);
+  // once chosen, the backend filters this campaign's own sessions down to a
+  // single best-matching proximity tier (never mixing tiers).
+  const [bookingLocationId, setBookingLocationId] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
+
   // Hierarchical selection
   const [selectedVenueId, setSelectedVenueId] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
@@ -392,12 +401,28 @@ export default function RegistrationFormWrapper() {
       .catch(() => { setError('Failed to load campaign.'); setLoading(false); });
   }, [slug, preselectedSessionId]);
 
+  // Once a location is chosen (and it's not the "skip" escape hatch), ask the
+  // backend to filter this campaign's sessions to the single best-matching
+  // geographic tier (exact -> upazila/zone -> district/city corp -> division,
+  // or an explicit empty state). The backend never mixes tiers and never
+  // falls back to unrelated venues elsewhere in the campaign.
+  useEffect(() => {
+    if (!bookingLocationId || bookingLocationId === 'skip') return;
+    setLocationLoading(true);
+    getCampaignBySlug(slug, bookingLocationId)
+      .then((c) => setCampaign(c))
+      .catch(() => setError('Failed to load venues for your location.'))
+      .finally(() => setLocationLoading(false));
+  }, [slug, bookingLocationId]);
+
   // ── Derived data (all client-side, zero extra API calls) ──────────────────
 
   const activeSessions = useMemo(() => campaign?.sessions.filter(s => s.isActive) ?? [], [campaign]);
 
   const venueGroups = useMemo(() => buildVenueGroups(activeSessions), [activeSessions]);
 
+  // The backend already restricted venueGroups to a single proximity tier —
+  // this is a free-text refinement within that tier only, not a re-rank.
   const filteredVenues = useMemo(() => {
     const q = locationSearch.toLowerCase().trim();
     if (!q) return venueGroups;
@@ -405,15 +430,38 @@ export default function RegistrationFormWrapper() {
       g.venue.name.toLowerCase().includes(q) ||
       g.venue.zone?.name.toLowerCase().includes(q) ||
       g.venue.zone?.cityCorporation?.name.toLowerCase().includes(q) ||
+      (g.venue.locationPath ?? []).some(l => l.nameEn.toLowerCase().includes(q)) ||
       (g.venue.address ?? '').toLowerCase().includes(q),
     );
   }, [venueGroups, locationSearch]);
+
+  const venueMatchMessage = bookingLocationId && bookingLocationId !== 'skip'
+    ? campaign?.venueMatch?.message
+    : undefined;
+  const isExactMatch = campaign?.venueMatch?.tier === 'exact';
 
   const dateOptions = useMemo(() => buildDateOptions(activeSessions, selectedVenueId), [activeSessions, selectedVenueId]);
   const slotOptions = useMemo(() => buildSlots(activeSessions, selectedVenueId, selectedDate), [activeSessions, selectedVenueId, selectedDate]);
 
   const selectedVenue = useMemo(() => venueGroups.find(g => g.venue.id === selectedVenueId)?.venue ?? null, [venueGroups, selectedVenueId]);
   const selectedSession = useMemo(() => slotOptions.find(s => s.id === selectedSessionId) ?? null, [slotOptions, selectedSessionId]);
+
+  // The booking's location context comes from the venue the user already
+  // picked in step 1 — never re-asked in "Your Info" (requirement: no
+  // re-prompt for location as an optional field).
+  useEffect(() => {
+    if (!selectedVenue?.locationPath?.length) return;
+    const byType = new Map(selectedVenue.locationPath.map(l => [l.type, l.id]));
+    setOwnerLocationValue({
+      divisionId: byType.get('DIVISION'),
+      districtId: byType.get('DISTRICT'),
+      upazilaId: byType.get('UPAZILA') ?? byType.get('THANA'),
+      unionId: byType.get('UNION') ?? byType.get('POURASHAVA'),
+      cityCorporationId: byType.get('CITY_CORPORATION'),
+      cityZoneId: byType.get('CITY_ZONE'),
+      wardId: byType.get('WARD'),
+    });
+  }, [selectedVenue]);
 
   const slotsByPeriod = useMemo(() =>
     slotOptions.reduce((acc, s) => {
@@ -576,7 +624,7 @@ export default function RegistrationFormWrapper() {
   if (paymentUnavailable) {
     const phone = siteSettings?.supportPhone ?? siteSettings?.officialPhone;
     const whatsapp = siteSettings?.whatsappNumber;
-    const apiBase = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+    const apiBase = getApiOrigin();
     const pdfUrl = pendingBookingNumber
       ? `${apiBase}/api/v1/public/campaign-registrations/booking/${encodeURIComponent(pendingBookingNumber)}/slip.pdf`
       : null;
@@ -820,26 +868,91 @@ export default function RegistrationFormWrapper() {
           {step === 1 && (
             <div>
               <h2 className="text-base font-bold text-(--bpa-navy) mb-0.5">Select a Location</h2>
-              <p className="text-xs text-gray-500 mb-4">
-                {venueGroups.length} venue{venueGroups.length !== 1 ? 's' : ''} across this campaign
-              </p>
 
-              {venueGroups.length > 4 && (
-                <div className="relative mb-4">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={locationSearch}
-                    onChange={e => setLocationSearch(e.target.value)}
-                    placeholder="Search by venue, zone or area…"
-                    className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-(--bpa-green)"
-                  />
+              {venueGroups.length === 0 && bookingLocationId && bookingLocationId !== 'skip' ? (
+                <div className="text-center py-10 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <Building2 size={28} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm font-semibold text-(--bpa-navy) mb-1">
+                    No venue is currently available near your selected location
+                  </p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    Try a different location, or let us notify you when one opens up nearby.
+                  </p>
+                  <div className="flex flex-col items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setBookingLocationId('')}
+                      className="text-xs font-semibold text-(--bpa-green) hover:underline"
+                    >
+                      Change location
+                    </button>
+                    <NotifyMeForm areaLabel={campaign?.title ?? 'this campaign'} />
+                  </div>
                 </div>
-              )}
-
-              {filteredVenues.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">No venues match your search.</p>
+              ) : venueGroups.length === 0 ? (
+                <div className="text-center py-10 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                  <Building2 size={28} className="mx-auto text-gray-300 mb-2" />
+                  <p className="text-sm font-semibold text-(--bpa-navy) mb-1">No venue created for this area yet</p>
+                  <p className="text-xs text-gray-500 mb-4">
+                    This campaign doesn&apos;t have a scheduled venue right now. Check back soon, or let us notify you.
+                  </p>
+                  <div className="flex justify-center">
+                    <NotifyMeForm areaLabel={campaign?.title ?? 'this campaign'} />
+                  </div>
+                </div>
+              ) : !bookingLocationId ? (
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-4">
+                    Tell us your location so we can show the closest venues for this campaign first.
+                  </p>
+                  <BookingLocationPicker onSelect={(id) => setBookingLocationId(id)} />
+                  <button
+                    type="button"
+                    onClick={() => setBookingLocationId('skip')}
+                    className="mt-3 text-xs text-gray-400 hover:text-(--bpa-green) hover:underline"
+                  >
+                    Skip — show me all venues for this campaign
+                  </button>
+                </div>
+              ) : locationLoading ? (
+                <div className="text-center py-10 text-sm text-gray-400">Finding venues near you…</div>
               ) : (
+                <>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs text-gray-500">
+                      {venueGroups.length} venue{venueGroups.length !== 1 ? 's' : ''} available
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setBookingLocationId('')}
+                      className="text-xs font-semibold text-(--bpa-green) hover:underline shrink-0"
+                    >
+                      Change location
+                    </button>
+                  </div>
+
+                  {venueMatchMessage && !isExactMatch && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-4">
+                      {venueMatchMessage}
+                    </p>
+                  )}
+
+                  {venueGroups.length > 4 && (
+                    <div className="relative mb-4">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                      <input
+                        type="text"
+                        value={locationSearch}
+                        onChange={e => setLocationSearch(e.target.value)}
+                        placeholder="Search by venue, zone or area…"
+                        className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-(--bpa-green)"
+                      />
+                    </div>
+                  )}
+
+                  {filteredVenues.length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-8">No venues match your search.</p>
+                  ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {filteredVenues.map(({ venue, available, totalCapacity, dateCount }) => {
                     const full = available <= 0;
@@ -871,7 +984,11 @@ export default function RegistrationFormWrapper() {
                               <Building2 size={12} className={selected ? 'text-(--bpa-green) shrink-0' : 'text-gray-400 shrink-0'} />
                               <p className="font-bold text-(--bpa-navy) text-sm truncate">{venue.name}</p>
                             </div>
-                            {venue.zone && (
+                            {venue.locationPath && venue.locationPath.length > 0 ? (
+                              <p className="text-[11px] text-gray-400 ml-[18px]">
+                                {venue.locationPath.map(l => l.nameEn).join(' › ')}
+                              </p>
+                            ) : venue.zone && (
                               <p className="text-[11px] text-gray-400 ml-[18px]">
                                 {venue.zone.name}{venue.zone.cityCorporation ? `, ${venue.zone.cityCorporation.name}` : ''}
                               </p>
@@ -890,6 +1007,8 @@ export default function RegistrationFormWrapper() {
                     );
                   })}
                 </div>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -1093,16 +1212,6 @@ export default function RegistrationFormWrapper() {
                     )}
                   </div>
                 ))}
-                <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">Location (optional)</p>
-                  <LocationSelector
-                    value={ownerLocationValue}
-                    onChange={setOwnerLocationValue}
-                    showUnion
-                    showWard
-                    showAddressLine={false}
-                  />
-                </div>
               </div>
             </div>
           )}

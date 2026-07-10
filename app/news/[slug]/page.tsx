@@ -8,6 +8,7 @@ import NewsArticleJsonLd from '@/components/seo/NewsArticleJsonLd';
 import NewsCard from '@/components/news/NewsCard';
 import { getNewsBySlug, getNewsList } from '@/lib/api/news';
 import { getSeoData } from '@/lib/api/seo';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 import { buildMetadata, BASE_URL } from '@/lib/seo';
 import { CalendarDays, User, Tag, ArrowLeft } from 'lucide-react';
 import DonationCTASection from '@/components/donations/DonationCTASection';
@@ -71,6 +72,7 @@ export default async function NewsArticlePage({ params }: PageProps) {
     notFound();
   }
   if (!article) notFound();
+  const coverImageUrl = resolveMediaUrl(article.coverImageUrl);
 
   // Related: prefer same category, exclude current, cap at 3
   let related: Awaited<ReturnType<typeof getNewsList>>['items'] = [];
@@ -150,10 +152,10 @@ export default async function NewsArticlePage({ params }: PageProps) {
           )}
 
           {/* Cover image */}
-          {article.coverImageUrl && (
+          {coverImageUrl && (
             <div className="relative aspect-[16/9] rounded-2xl overflow-hidden mb-10 bg-gray-100">
               <Image
-                src={article.coverImageUrl}
+                src={coverImageUrl}
                 alt={article.title}
                 fill
                 priority

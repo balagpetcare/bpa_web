@@ -28,6 +28,53 @@ export interface FeaturedCampaignsResult {
   upcoming: CampaignListItem[];
 }
 
+// ─── Location-first venue discovery ────────────────────────────────
+
+export interface PublicCampaignVenueFilters {
+  divisionId?: string;
+  districtId?: string;
+  upazilaId?: string;
+  unionId?: string;
+  cityCorporationId?: string;
+  cityZoneId?: string;
+  wardId?: string;
+}
+
+export interface PublicCampaignVenueSession {
+  id: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+  campaign: { id: string; slug: string; title: string; campaignType: string; status: string };
+}
+
+export interface PublicCampaignVenue {
+  id: string;
+  name: string;
+  address: string;
+  googleMapsUrl: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  contactPerson: string | null;
+  contactPhone: string | null;
+  location: { id: string; type: string; nameEn: string; nameBn: string | null; parentId: string | null } | null;
+  locationPath: { id: string; type: string; nameEn: string; nameBn: string | null; parentId: string | null }[];
+  campaignSessions: PublicCampaignVenueSession[];
+}
+
+export async function getPublicCampaignVenues(
+  filters: PublicCampaignVenueFilters = {},
+  fetchOptions?: RequestInit,
+): Promise<PublicCampaignVenue[]> {
+  const q = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => { if (v) q.set(k, v); });
+  const qs = q.toString();
+  const res = await apiFetch<PublicCampaignVenue[]>(`/public/campaigns/venues${qs ? `?${qs}` : ''}`, fetchOptions);
+  return res.data;
+}
+
 export async function getFeaturedCampaigns(fetchOptions?: RequestInit): Promise<FeaturedCampaignsResult> {
   const res = await apiFetch<FeaturedCampaignsResult>('/public/campaigns/featured', fetchOptions);
   return res.data;
@@ -44,8 +91,9 @@ export async function getCampaignsList(params: CampaignListParams = {}, fetchOpt
   return { items: res.data, meta: res.meta as PaginationMeta };
 }
 
-export async function getCampaignBySlug(slug: string, fetchOptions?: RequestInit) {
-  const res = await apiFetch<CampaignDetail>(`/public/campaigns/${slug}`, fetchOptions);
+export async function getCampaignBySlug(slug: string, locationId?: string, fetchOptions?: RequestInit) {
+  const qs = locationId ? `?locationId=${locationId}` : '';
+  const res = await apiFetch<CampaignDetail>(`/public/campaigns/${slug}${qs}`, fetchOptions);
   return res.data;
 }
 

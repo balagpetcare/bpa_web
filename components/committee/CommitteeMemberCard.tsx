@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface CommitteeMemberCardProps {
   member: {
@@ -18,6 +19,7 @@ function initials(name: string) {
 }
 
 export default function CommitteeMemberCard({ member, onClick }: CommitteeMemberCardProps) {
+  const photoUrl = resolveMediaUrl(member.photoUrl);
   return (
     <button
       type="button"
@@ -26,9 +28,9 @@ export default function CommitteeMemberCard({ member, onClick }: CommitteeMember
     >
       {/* Photo */}
       <div className="relative aspect-square bg-(--bpa-green) overflow-hidden">
-        {member.photoUrl ? (
+        {photoUrl ? (
           <Image
-            src={member.photoUrl}
+            src={photoUrl}
             alt={member.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"

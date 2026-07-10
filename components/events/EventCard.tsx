@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CalendarDays, MapPin, Users } from 'lucide-react';
 import type { EventListItem } from '@/types/bpa.types';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface EventCardProps {
   event: EventListItem;
@@ -19,15 +20,16 @@ function formatDateRange(start: string, end?: string | null) {
 export default function EventCard({ event }: EventCardProps) {
   const spotsLeft = event.capacity != null ? event.capacity - event.registrationCount : null;
   const isFull = spotsLeft !== null && spotsLeft <= 0;
+  const coverImageUrl = resolveMediaUrl(event.coverImageUrl);
 
   return (
     <Link href={`/events/${event.slug}`} className="group block h-full">
       <article className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
         {/* Cover image */}
         <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden">
-          {event.coverImageUrl ? (
+          {coverImageUrl ? (
             <Image
-              src={event.coverImageUrl}
+              src={coverImageUrl}
               alt={event.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

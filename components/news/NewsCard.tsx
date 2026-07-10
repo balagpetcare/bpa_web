@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { CalendarDays } from 'lucide-react';
 import type { NewsListItem } from '@/types/bpa.types';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface NewsCardProps {
   article: NewsListItem;
@@ -13,13 +14,14 @@ function formatDate(iso: string | null) {
 }
 
 export default function NewsCard({ article }: NewsCardProps) {
+  const coverImageUrl = resolveMediaUrl(article.coverImageUrl);
   return (
     <Link href={`/news/${article.slug}`} className="group block h-full">
       <article className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow h-full flex flex-col">
         <div className="relative aspect-[16/9] bg-gray-100 overflow-hidden">
-          {article.coverImageUrl ? (
+          {coverImageUrl ? (
             <Image
-              src={article.coverImageUrl}
+              src={coverImageUrl}
               alt={article.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"

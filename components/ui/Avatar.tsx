@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 interface AvatarProps {
   src?: string | null;
@@ -17,10 +18,12 @@ function initials(name: string) {
 }
 
 export default function Avatar({ src, name, size = 64, className = '' }: AvatarProps) {
-  if (src) {
+  const resolvedSrc = resolveMediaUrl(src);
+
+  if (resolvedSrc) {
     return (
       <Image
-        src={src}
+        src={resolvedSrc}
         alt={name}
         width={size}
         height={size}

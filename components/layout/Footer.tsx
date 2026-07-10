@@ -16,6 +16,7 @@ import {
 } from 'react-icons/fa6';
 import { getPublicHomepage } from '@/lib/api/homepage';
 import { getPublicSiteSettings, formatAddress } from '@/lib/api/site-settings';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 
 export default async function Footer() {
   const year = new Date().getFullYear();
@@ -27,8 +28,8 @@ export default async function Footer() {
   const footer = homepage?.footer ?? null;
   // Use secondaryLogoUrl (dark-bg logo) first; only fall back to primaryLogoUrl.
   // Track which is being used so we can apply invert only when using the light-bg logo.
-  const footerLogoUrl = s?.secondaryLogoUrl ?? null;
-  const footerLogoFallbackUrl = !footerLogoUrl ? (s?.primaryLogoUrl ?? null) : null;
+  const footerLogoUrl = resolveMediaUrl(s?.secondaryLogoUrl) ?? null;
+  const footerLogoFallbackUrl = !footerLogoUrl ? (resolveMediaUrl(s?.primaryLogoUrl) ?? null) : null;
 
   const contactPhone = s?.primaryPhone ?? s?.officialPhone ?? s?.supportPhone ?? null;
   const contactEmail =

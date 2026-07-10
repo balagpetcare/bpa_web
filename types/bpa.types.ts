@@ -138,6 +138,14 @@ export type PetType = 'dog' | 'cat' | 'bird' | 'rabbit' | 'guinea_pig' | 'fish' 
 export type PetGender = 'male' | 'female' | 'unknown';
 export type CampaignRegistrationStatus = 'pending_payment' | 'paid' | 'checked_in' | 'vaccinated' | 'certificate_issued' | 'completed' | 'no_show' | 'cancelled';
 
+export interface VenueLocationRef {
+  id: string;
+  type: string;
+  nameEn: string;
+  nameBn: string | null;
+  parentId: string | null;
+}
+
 export interface CampaignVenue {
   id: string;
   name: string;
@@ -146,6 +154,8 @@ export interface CampaignVenue {
   latitude: string | null;
   longitude: string | null;
   zone: { id: string; name: string; cityCorporation: { id: string; name: string } } | null;
+  location: VenueLocationRef | null;
+  locationPath?: VenueLocationRef[];
 }
 
 export interface CampaignSession {
@@ -228,6 +238,9 @@ export interface CampaignDetail extends CampaignListItem {
   allowedPetTypes: string[];
   termsAndConditions: string | null;
   faq: CampaignFaqItem[] | null;
+  // Present only when the request included ?locationId= — tells the caller
+  // which single proximity tier `sessions` was filtered down to.
+  venueMatch?: { tier: string; message: string };
 }
 
 export interface PetBooking {

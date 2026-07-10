@@ -62,7 +62,7 @@ export interface LocationSelectorProps {
 
 // ── Fetch helper ───────────────────────────────────────────────────────────────
 
-async function fetchLocations(
+export async function fetchLocations(
   type?: LocationType,
   parentId?: string | null,
 ): Promise<LocationOption[]> {

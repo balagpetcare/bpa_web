@@ -9,6 +9,7 @@ import EventCard from '@/components/events/EventCard';
 import EventRegistrationForm from '@/components/events/EventRegistrationForm';
 import { getEventBySlug, getEventsList } from '@/lib/api/events';
 import { getSeoData } from '@/lib/api/seo';
+import { resolveMediaUrl } from '@/lib/utils/media-url';
 import { buildMetadata, BASE_URL } from '@/lib/seo';
 import { CalendarDays, MapPin, Users, BanknoteIcon, ArrowLeft, Clock } from 'lucide-react';
 import DonationCTASection from '@/components/donations/DonationCTASection';
@@ -82,6 +83,7 @@ export default async function EventDetailPage({ params }: PageProps) {
     notFound();
   }
   if (!event) notFound();
+  const coverImageUrl = resolveMediaUrl(event.coverImageUrl);
 
   const spotsLeft = event.capacity != null ? event.capacity - event.registrationCount : null;
   const isFull = spotsLeft !== null && spotsLeft <= 0;
@@ -124,10 +126,10 @@ export default async function EventDetailPage({ params }: PageProps) {
             {/* Left — event detail */}
             <div className="lg:col-span-2 space-y-8">
               {/* Cover image */}
-              {event.coverImageUrl ? (
+              {coverImageUrl ? (
                 <div className="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100">
                   <Image
-                    src={event.coverImageUrl}
+                    src={coverImageUrl}
                     alt={event.title}
                     fill
                     priority

@@ -1,16 +1,7 @@
 // ─── Media URL resolution ─────────────────────────────────────────────────────
 
-const MEDIA_BASE =
-  typeof window === 'undefined'
-    ? (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000')
-    : (process.env.NEXT_PUBLIC_API_URL ?? '');
-
-export function resolveMediaUrl(url: string | null | undefined): string | null {
-  if (!url) return null;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  if (url.startsWith('/')) return `${MEDIA_BASE}${url}`;
-  return url;
-}
+import { resolveMediaUrl } from '@/lib/utils/media-url';
+export { resolveMediaUrl };
 
 // ─── Safe number conversion ───────────────────────────────────────────────────
 

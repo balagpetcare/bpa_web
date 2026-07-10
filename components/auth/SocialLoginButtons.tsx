@@ -8,10 +8,11 @@ const socialProviders = [
   { id: 'instagram', name: 'Instagram', icon: 'https://www.svgrepo.com/show/475658/instagram-color.svg', enabled: process.env.NEXT_PUBLIC_AUTH_INSTAGRAM_ENABLED === 'true' },
   { id: 'twitter', name: 'Twitter / X', icon: 'https://www.svgrepo.com/show/513008/twitter-154.svg', enabled: process.env.NEXT_PUBLIC_AUTH_TWITTER_ENABLED === 'true' },
 ];
+import { getApiOrigin } from '@/lib/utils/api-url';
 
 export default function SocialLoginButtons() {
   const handleSocialLogin = (provider: string) => {
-    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/auth/oauth/${provider}/start`;
+    window.location.href = `${getApiOrigin()}/api/v1/auth/oauth/${provider}/start`;
   };
 
   return (
