@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Loader2 } from 'lucide-react';
 
 interface BPAVideoPlayerProps {
-  videoSourceType?: 'youtube' | 'upload';
+  videoSourceType?: 'youtube' | 'vimeo' | 'upload';
+  videoProvider?: string | null;
   videoUrl?: string | null;
   videoFileUrl?: string | null;
   videoPosterUrl?: string | null;
@@ -18,15 +19,31 @@ function getYoutubeId(url: string | null): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
+function getVimeoId(url: string | null): string | null {
+  if (!url) return null;
+  const regExp = /^.*(vimeo\.com\/)([0-9]+).*/;
+  const match = url.match(regExp);
+  return match && match[2] ? match[2] : null;
+}
+
+function buildVimeoEmbedUrl(vimeoId: string): string {
+  return `https://player.vimeo.com/video/${vimeoId}`;
+}
+
 export default function BPAVideoPlayer({
   videoSourceType = 'youtube',
+  videoProvider,
   videoUrl,
   videoFileUrl,
   videoPosterUrl,
   title = 'BPA Content Video',
 }: BPAVideoPlayerProps) {
-  const isYoutube = videoSourceType === 'youtube' || (!videoSourceType && !videoFileUrl && !!videoUrl);
-  const embedId = isYoutube ? getYoutubeId(videoUrl ?? null) : null;
+  const isYoutube = videoSourceType === 'youtube' || videoProvider === 'youtube' || (!videoSourceType && !videoFileUrl && !!videoUrl && videoUrl.includes('youtube'));
+  const isVimeo = videoSourceType === 'vimeo' || videoProvider === 'vimeo' || (!videoSourceType && !videoFileUrl && !!videoUrl && videoUrl.includes('vimeo'));
+
+  const youtubeId = isYoutube ? getYoutubeId(videoUrl ?? null) : null;
+  const vimeoId = isVimeo ? getVimeoId(videoUrl ?? null) : null;
+  const vimeoEmbedUrl = vimeoId ? buildVimeoEmbedUrl(vimeoId) : null;
 
   // HTML5 player controls state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -216,9 +233,9 @@ export default function BPAVideoPlayer({
   if (isYoutube) {
     return (
       <div className="bg-black rounded-3xl overflow-hidden shadow-xl aspect-video w-full mb-8 relative border border-gray-900">
-        {embedId ? (
+        {youtubeId ? (
           <iframe
-            src={`https://www.youtube.com/embed/${embedId}?autoplay=0&rel=0`}
+            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=0&rel=0`}
             title={title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -233,6 +250,36 @@ export default function BPAVideoPlayer({
               {videoUrl && (
                 <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-400 underline block mt-2 font-bold">
                   Watch on YouTube
+                </a>
+              )}
+            </p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Render Vimeo
+  if (isVimeo) {
+    return (
+      <div className="bg-black rounded-3xl overflow-hidden shadow-xl aspect-video w-full mb-8 relative border border-gray-900">
+        {vimeoEmbedUrl ? (
+          <iframe
+            src={vimeoEmbedUrl}
+            title={title}
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full border-0"
+          />
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-900 text-white p-6 text-center">
+            <Play size={48} className="text-gray-600 mb-4" />
+            <p className="font-bold text-lg mb-2">Video player unavailable</p>
+            <p className="text-gray-400 text-sm max-w-sm">
+              This Vimeo video cannot be played directly here.
+              {videoUrl && (
+                <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:text-emerald-400 underline block mt-2 font-bold">
+                  Watch on Vimeo
                 </a>
               )}
             </p>

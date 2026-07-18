@@ -65,6 +65,7 @@ export default async function VideoDetailPage({ params }: Props) {
         {/* Custom Video Player */}
         <BPAVideoPlayer
           videoSourceType={(video.videoSourceType ?? undefined) as VideoSourceType | undefined}
+          videoProvider={video.videoProvider}
           videoUrl={video.videoUrl}
           videoFileUrl={video.videoFileUrl}
           videoPosterUrl={video.videoPosterUrl}

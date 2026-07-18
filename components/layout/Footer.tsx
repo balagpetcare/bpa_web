@@ -67,6 +67,7 @@ export default async function Footer() {
       { label: 'Community Pet Care', href: '/community-pet-care' },
       { label: 'Pet Census', href: '/pet-census-2026' },
       { label: 'Events', href: '/events' },
+      { label: 'Videos', href: '/videos' },
       { label: 'Volunteer', href: '/volunteer' },
     ],
     members: [

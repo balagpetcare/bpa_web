@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getPublicVideos } from '@/lib/api/content';
+import { getPublicVideos, getPublicVideoCategories } from '@/lib/api/content';
 import { Video, Search, Play } from 'lucide-react';
 import { buildMetadata } from '@/lib/seo';
 import { getSeoData } from '@/lib/api/seo';
@@ -20,17 +20,23 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 interface PageProps {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; category?: string }>;
 }
 
 export default async function VideosPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const q = resolvedSearchParams.q || '';
   const page = resolvedSearchParams.page ? parseInt(resolvedSearchParams.page, 10) : 1;
+  const categorySlug = resolvedSearchParams.category || '';
 
-  const result = await getPublicVideos({ q, page, limit: 12 }).catch(() => ({ data: [], meta: { total: 0, totalPages: 1 } }));
-  const videos = result.data || [];
-  const meta = result.meta || { total: 0, totalPages: 1 };
+  const [videosResult, categoriesResult] = await Promise.all([
+    getPublicVideos({ q, page, limit: 12, categorySlug: categorySlug || undefined }).catch(() => ({ data: [], meta: { total: 0, totalPages: 1 } })),
+    getPublicVideoCategories().catch(() => []),
+  ]);
+
+  const videos = videosResult.data || [];
+  const meta = videosResult.meta || { total: 0, totalPages: 1 };
+  const categories = categoriesResult || [];
 
   return (
     <main className="min-h-screen bg-gray-50/50 py-16">
@@ -62,6 +68,35 @@ export default async function VideosPage({ searchParams }: PageProps) {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           </form>
         </div>
+
+        {/* Category Filter */}
+        {categories.length > 0 && (
+          <div className="max-w-4xl mx-auto mb-12 flex flex-wrap gap-3 justify-center">
+            <Link
+              href="/videos"
+              className={`px-4 py-2 text-xs font-extrabold rounded-full transition ${
+                !categorySlug
+                  ? 'bg-(--bpa-green) text-white shadow-md'
+                  : 'bg-white border border-gray-200 text-gray-600 hover:border-(--bpa-green) hover:text-(--bpa-green)'
+              }`}
+            >
+              All Videos
+            </Link>
+            {categories.map(cat => (
+              <Link
+                key={cat.slug}
+                href={`/videos?category=${cat.slug}`}
+                className={`px-4 py-2 text-xs font-extrabold rounded-full transition ${
+                  categorySlug === cat.slug
+                    ? 'bg-(--bpa-green) text-white shadow-md'
+                    : 'bg-white border border-gray-200 text-gray-600 hover:border-(--bpa-green) hover:text-(--bpa-green)'
+                }`}
+              >
+                {cat.nameEn} ({cat.publishedVideoCount})
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Videos Grid */}
         {videos.length === 0 ? (
@@ -156,7 +191,7 @@ export default async function VideosPage({ searchParams }: PageProps) {
             {meta.totalPages > 1 && (
               <div className="flex justify-center items-center gap-3 mt-12">
                 <Link
-                  href={`/videos?q=${q}&page=${page - 1}`}
+                  href={`/videos?q=${q}${categorySlug ? `&category=${categorySlug}` : ''}&page=${page - 1}`}
                   className={`px-4 py-2 text-xs font-extrabold border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 transition ${page <= 1 ? 'pointer-events-none opacity-50' : ''}`}
                 >
                   Previous
@@ -165,7 +200,7 @@ export default async function VideosPage({ searchParams }: PageProps) {
                   Page {page} of {meta.totalPages}
                 </span>
                 <Link
-                  href={`/videos?q=${q}&page=${page + 1}`}
+                  href={`/videos?q=${q}${categorySlug ? `&category=${categorySlug}` : ''}&page=${page + 1}`}
                   className={`px-4 py-2 text-xs font-extrabold border border-gray-200 rounded-xl bg-white text-gray-600 hover:bg-gray-50 transition ${page >= meta.totalPages ? 'pointer-events-none opacity-50' : ''}`}
                 >
                   Next

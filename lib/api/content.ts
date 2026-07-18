@@ -13,6 +13,15 @@ export interface Category {
   description: string | null;
 }
 
+export interface VideoCategoryWithCount {
+  id: string;
+  nameEn: string;
+  nameBn: string;
+  slug: string;
+  description?: string | null;
+  publishedVideoCount: number;
+}
+
 export interface Comment {
   id: string;
   postId: string;
@@ -43,7 +52,7 @@ export interface ContentPost {
   thumbnailUrl: string | null;
   videoUrl: string | null;
   videoProvider: string | null;
-  videoSourceType?: 'youtube' | 'upload';
+  videoSourceType?: 'youtube' | 'vimeo' | 'upload';
   videoFileUrl?: string | null;
   videoFileKey?: string | null;
   videoPosterUrl?: string | null;
@@ -82,11 +91,18 @@ export async function getContentHomepage() {
   return res.data;
 }
 
-export async function getPublicVideos(params?: { page?: number; limit?: number; q?: string }) {
+export async function getPublicVideoCategories() {
+  const res = await apiFetch<VideoCategoryWithCount[]>(`/public/video-categories`, { cache: 'no-store' });
+  return res.data || [];
+}
+
+export async function getPublicVideos(params?: { page?: number; limit?: number; q?: string; categorySlug?: string; featured?: boolean }) {
   const query = new URLSearchParams();
   if (params?.page) query.set('page', String(params.page));
   if (params?.limit) query.set('limit', String(params.limit));
   if (params?.q) query.set('q', params.q);
+  if (params?.categorySlug) query.set('categorySlug', params.categorySlug);
+  if (params?.featured) query.set('featured', 'true');
 
   const res = await apiFetch<ContentPost[]>(`/public/videos${query.size ? `?${query}` : ''}`, { cache: 'no-store' });
   return res;

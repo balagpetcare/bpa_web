@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import EnterpriseHeroSection from '@/components/sections/EnterpriseHeroSection';
+import FeaturedVideosSection from '@/components/sections/FeaturedVideosSection';
 import { getPublicHomepage } from '@/lib/api/homepage';
+import { getContentHomepage } from '@/lib/api/content';
 import { getSeoData } from '@/lib/api/seo';
 import { buildMetadata } from '@/lib/seo';
 import type { HeroSlide } from '@/types/bpa.types';
@@ -114,8 +116,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const homepage = await getPublicHomepage('en', { cache: 'no-store' }).catch(() => null);
+  const [homepage, contentHomepage] = await Promise.all([
+    getPublicHomepage('en', { cache: 'no-store' }).catch(() => null),
+    getContentHomepage().catch(() => null),
+  ]);
+
   const heroSlides = homepage?.heroSlides?.length ? homepage.heroSlides : fallbackSlides;
+  const featuredVideos = contentHomepage?.featuredVideos || [];
 
   return (
     <>
@@ -124,6 +131,7 @@ export default async function HomePage() {
       <AboutSection />
       <ProgramsSection />
       <FeaturedCampaignSection />
+      <FeaturedVideosSection videos={featuredVideos} />
       <HowItWorksSection />
       <ImpactSection />
       <AdoptionRescueSection />

@@ -1,5 +1,6 @@
 export interface NavItem {
   label: string;
+  labelBn?: string;
   href: string;
   children?: NavItem[];
 }
@@ -15,6 +16,7 @@ export const NAV_ITEMS: NavItem[] = [
       { label: 'Pet Census 2026', href: '/pet-census-2026' },
       { label: 'Community Pet Care', href: '/community-pet-care' },
       { label: 'Events', href: '/events' },
+      { label: 'Videos', labelBn: 'ভিডিও', href: '/videos' },
     ],
   },
   {
