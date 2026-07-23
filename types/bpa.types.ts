@@ -741,3 +741,110 @@ export interface PublicHomepagePayload {
   partners: Partner[];
   footer: FooterConfig | null;
 }
+
+// ─── Clinic Directory (Command 3 public API) ───────────────────────────────
+// Mirrors bpa_api/docs/PUBLIC_CLINICS_API.md exactly — this is the single
+// stable DTO both the mobile app and this website consume; neither talks to
+// the database schema directly, and no separate website-only clinic data
+// store exists.
+
+export type ClinicTriState = 'UNKNOWN' | 'YES' | 'NO';
+export type ClinicVerificationStatus = 'UNKNOWN' | 'UNVERIFIED' | 'VERIFIED' | 'REJECTED';
+export type ClinicOpenStatus = 'OPEN' | 'CLOSED' | 'UNKNOWN';
+
+export interface ClinicPhone {
+  phoneNumber: string;
+  label: string | null;
+  isPrimary: boolean;
+  whatsappAvailable: ClinicTriState;
+}
+
+export interface ClinicFacility {
+  facilityType: string;
+  available: ClinicTriState;
+  notes: string | null;
+}
+
+export interface ClinicOpeningHoursStatus {
+  status: ClinicOpenStatus;
+  timezone: string;
+  todayHours: { opensAt: string | null; closesAt: string | null; isClosed: boolean } | null;
+}
+
+export interface ClinicWeeklyHours {
+  dayOfWeek: number; // 0 = Sunday .. 6 = Saturday
+  opensAt: string | null;
+  closesAt: string | null;
+  isClosed: boolean;
+}
+
+export interface ClinicClosure {
+  startDate: string;
+  endDate: string | null;
+  reason: string | null;
+}
+
+export interface ClinicImage {
+  url: string;
+  isCover: boolean;
+  altText: string | null;
+}
+
+export interface ClinicSocialLink {
+  platform: string;
+  url: string;
+  label: string | null;
+}
+
+export interface ClinicActionLinks {
+  call: string | null;
+  whatsapp: string | null;
+  directions: string | null;
+  website: string | null;
+  share: string;
+}
+
+export interface PublicClinic {
+  id: string;
+  slug: string;
+  organizationName: string;
+  organizationSlug: string;
+  // Resolved server-side (Media Library asset if selected, else the legacy
+  // URL field, else null) — never a media ID or storage path.
+  organizationLogoUrl: string | null;
+  organizationCoverUrl: string | null;
+  branchName: string;
+  address: string | null;
+  area: string | null;
+  cityCorporation: string | null;
+  district: string | null;
+  postalCode: string | null;
+  location: { latitude: number; longitude: number } | null;
+  distanceKm: number | null;
+  emergencyAvailability: ClinicTriState;
+  open24Hours: ClinicTriState;
+  appointmentRequired: ClinicTriState;
+  accessibilityNotes: string | null;
+  verificationStatus: ClinicVerificationStatus;
+  lastVerifiedAt: string | null;
+  featured: boolean;
+  phones: ClinicPhone[];
+  services: string[];
+  animalTypes: string[];
+  facilities: ClinicFacility[];
+  openingHoursStatus: ClinicOpeningHoursStatus;
+  weeklyHours: ClinicWeeklyHours[];
+  closures: ClinicClosure[];
+  images: ClinicImage[];
+  socialLinks: ClinicSocialLink[];
+  actions: ClinicActionLinks;
+}
+
+export interface PublicClinicFilterOptions {
+  cityCorporations: string[];
+  areas: string[];
+  districts: string[];
+  services: string[];
+  animalTypes: string[];
+  facilityTypes: string[];
+}

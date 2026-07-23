@@ -8,6 +8,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'About', href: '/about' },
+  { label: 'Find Clinics', labelBn: 'ক্লিনিক খুঁজুন', href: '/clinics' },
   {
     label: 'Programs',
     href: '#',

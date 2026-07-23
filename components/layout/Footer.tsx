@@ -64,6 +64,7 @@ export default async function Footer() {
     ],
     programs: [
       { label: 'Campaigns', href: '/campaigns' },
+      { label: 'Find Clinics', href: '/clinics' },
       { label: 'Community Pet Care', href: '/community-pet-care' },
       { label: 'Pet Census', href: '/pet-census-2026' },
       { label: 'Events', href: '/events' },

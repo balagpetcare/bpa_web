@@ -3,8 +3,25 @@ import { BASE_URL } from '@/lib/seo';
 import { getNewsList } from '@/lib/api/news';
 import { getEventsList } from '@/lib/api/events';
 import { getPublicTransparencyReports } from '@/lib/api/community-care';
+import { getClinicsList } from '@/lib/api/clinics';
 
 export const revalidate = 3600;
+
+// The public clinics API caps `limit` at 50 per page (unlike news/events),
+// so the sitemap must paginate through every page rather than requesting
+// a single large batch — a `limit: 1000` request 400s and silently drops
+// every clinic URL from the sitemap.
+async function getAllClinicSlugs(): Promise<string[]> {
+  const slugs: string[] = [];
+  let page = 1;
+  for (;;) {
+    const res = await getClinicsList({ page, limit: 50 });
+    slugs.push(...res.items.map((c) => c.slug));
+    if (!res.meta || page >= res.meta.totalPages) break;
+    page += 1;
+  }
+  return slugs;
+}
 
 const STATIC_ROUTES = [
   { path: '/', priority: 1.0, changeFrequency: 'weekly' },
@@ -26,6 +43,7 @@ const STATIC_ROUTES = [
   { path: '/pet-census-2026', priority: 0.9, changeFrequency: 'weekly' },
   { path: '/transparency', priority: 0.8, changeFrequency: 'weekly' },
   { path: '/pet-smart-solution', priority: 0.7, changeFrequency: 'monthly' },
+  { path: '/clinics', priority: 0.9, changeFrequency: 'daily' },
 ] as const;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -35,10 +53,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: r.changeFrequency,
   }));
 
-  const [newsResult, eventsResult, reportsResult] = await Promise.allSettled([
+  const [newsResult, eventsResult, reportsResult, clinicsResult] = await Promise.allSettled([
     getNewsList({ limit: 1000 }),
     getEventsList({ limit: 1000 }),
     getPublicTransparencyReports(),
+    getAllClinicSlugs(),
   ]);
 
   const newsEntries: MetadataRoute.Sitemap =
@@ -71,5 +90,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         }))
       : [];
 
-  return [...staticEntries, ...newsEntries, ...eventEntries, ...reportEntries];
+  const clinicEntries: MetadataRoute.Sitemap =
+    clinicsResult.status === 'fulfilled'
+      ? clinicsResult.value.map((slug) => ({
+          url: `${BASE_URL}/clinics/${slug}`,
+          changeFrequency: 'monthly',
+          priority: 0.6,
+        }))
+      : [];
+
+  return [...staticEntries, ...newsEntries, ...eventEntries, ...reportEntries, ...clinicEntries];
 }

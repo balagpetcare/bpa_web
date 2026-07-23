@@ -10,6 +10,31 @@ const PLACEHOLDER_PATTERN = { protocol: 'https', hostname: 'placehold.co', pathn
 const UNSPLASH_PATTERN = { protocol: 'https', hostname: 'images.unsplash.com', pathname: '/**' };
 const DEV_HOSTNAME_PATTERN = /^192\.168\.\d{1,3}\.\d{1,3}$/;
 
+const DEFAULT_MAP_TILE_ORIGINS = [
+  'https://a.tile.openstreetmap.org',
+  'https://b.tile.openstreetmap.org',
+  'https://c.tile.openstreetmap.org',
+];
+// Leaflet's default marker icon images ship from this CDN — see
+// components/clinics/ClinicMap.tsx. Fixed (not env-driven) since it's a
+// package-icon asset host, not a swappable map data provider.
+const LEAFLET_ICON_ORIGIN = 'https://unpkg.com';
+
+/**
+ * Map tile origins allowed by the CSP — environment-driven so switching
+ * `NEXT_PUBLIC_MAP_TILE_URL` to a different provider (e.g. a paid MapTiler/
+ * Mapbox raster endpoint) never requires a CSP code change, only a new env
+ * value. Falls back to the public OpenStreetMap tile servers.
+ */
+export function getAllowedMapTileOrigins(env = process.env) {
+  const raw = env.NEXT_PUBLIC_MAP_TILE_URL;
+  if (!raw) return DEFAULT_MAP_TILE_ORIGINS;
+  // `{s}` is Leaflet's own subdomain-load-balancing placeholder (a/b/c...);
+  // CSP's `*` wildcard is the equivalent way to allow any subdomain.
+  const configured = normalizeOrigin(raw.includes('{s}') ? raw.replace('{s}', '*') : raw);
+  return configured ? [configured] : DEFAULT_MAP_TILE_ORIGINS;
+}
+
 function normalizeOrigin(raw) {
   if (!raw) return null;
   try {
@@ -122,6 +147,8 @@ export function getContentSecurityPolicy(env = process.env) {
     'https://www.google-analytics.com',
     'https://www.googletagmanager.com',
     'https://www.facebook.com',
+    ...getAllowedMapTileOrigins(env),
+    LEAFLET_ICON_ORIGIN,
   ];
 
   const mediaSrc = [
