@@ -14,6 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
     href: '#',
     children: [
       { label: 'Campaigns', href: '/campaigns' },
+      { label: 'Spay & Neuter', href: '/spay-neuter' },
       { label: 'Pet Census 2026', href: '/pet-census-2026' },
       { label: 'Community Pet Care', href: '/community-pet-care' },
       { label: 'Events', href: '/events' },

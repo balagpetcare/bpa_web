@@ -6,6 +6,7 @@
   --foreground: #1a2540;
   --bpa-green: #1a6b3c;
   --bpa-navy: #1a2540;
+  --bpa-accent: #f5b82e;
 }
 
 @theme inline {
@@ -16,6 +17,12 @@
   --color-bpa-green-light: #e8f5ee;
   --color-bpa-navy: var(--bpa-navy);
   --color-bpa-navy-light: #2a3a60;
+  /* Secondary/outline button hover — dark-green text/border stays readable
+     on this accent, unlike solid --bpa-green (which the primary variant's
+     own text is white on). --color-bpa-accent-dark is the :active shade,
+     one step darker so a press is visibly distinct from :hover. */
+  --color-bpa-accent: var(--bpa-accent);
+  --color-bpa-accent-dark: #d7a228;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

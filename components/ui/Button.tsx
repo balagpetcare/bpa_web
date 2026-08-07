@@ -1,27 +1,12 @@
 import { forwardRef } from 'react';
-
-type Variant = 'primary' | 'outline' | 'ghost' | 'white';
-type Size = 'sm' | 'md' | 'lg';
+import { buildButtonClassName, type ButtonSize, type ButtonVariant } from '@/lib/ui/button-variants';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   loading?: boolean;
   as?: 'button';
 }
-
-const variantClasses: Record<Variant, string> = {
-  primary: 'bg-(--bpa-green) text-white hover:bg-(--bpa-green) focus-visible:ring-(--bpa-navy)',
-  outline: 'border-2 border-(--bpa-green) text-(--bpa-green) hover:bg-(--bpa-green) focus-visible:ring-(--bpa-navy)',
-  ghost: 'text-(--bpa-green) hover:bg-(--bpa-green) focus-visible:ring-(--bpa-navy)',
-  white: 'bg-white text-(--bpa-green) hover:bg-gray-50 focus-visible:ring-white',
-};
-
-const sizeClasses: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-5 py-2.5 text-sm',
-  lg: 'px-7 py-3.5 text-base',
-};
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', loading, disabled, className = '', children, ...props }, ref) => {
@@ -29,14 +14,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={Boolean(disabled || loading)}
-        className={[
-          'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
-          variantClasses[variant],
-          sizeClasses[size],
-          className,
-        ].join(' ')}
+        className={buildButtonClassName({ variant, size, className })}
         {...props}
       >
         {loading && (

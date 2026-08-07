@@ -1,15 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import Link from 'next/link';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { mapAuthErrorMessage } from '@/lib/auth/error-messages';
+import { getSafeReturnTo, withReturnTo } from '@/lib/auth/return-to';
 
-export default function SignUpPage() {
+function SignUpContent() {
   const { register } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = getSafeReturnTo(searchParams.get('next'));
 
   const [formData, setFormData] = useState({
     name: '',
@@ -48,12 +52,14 @@ export default function SignUpPage() {
         phone: formData.phone.trim() || undefined,
       });
       if (formData.email) {
-        router.push(`/auth/verify-email?email=${encodeURIComponent(formData.email)}`);
+        const qs = new URLSearchParams({ email: formData.email });
+        if (next !== '/') qs.set('next', next);
+        router.push(`/auth/verify-email?${qs.toString()}`);
       } else {
-        router.push('/');
+        router.push(next);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Registration failed. Please check your details and try again.');
+      setError(mapAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -181,12 +187,12 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        <SocialLoginButtons />
+        <SocialLoginButtons next={next} />
       </div>
 
       <p className="mt-8 text-center text-gray-600 font-medium">
         Already have an account?{' '}
-        <Link href="/auth/sign-in" className="text-(--bpa-navy) hover:text-(--bpa-green) transition-colors">
+        <Link href={withReturnTo('/auth/sign-in', next)} className="text-(--bpa-navy) hover:text-(--bpa-green) transition-colors">
           Sign In
         </Link>
       </p>
@@ -199,5 +205,13 @@ function AlertCircleIcon() {
     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin text-(--bpa-navy)" size={32} /></div>}>
+      <SignUpContent />
+    </Suspense>
   );
 }

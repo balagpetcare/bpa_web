@@ -1,14 +1,21 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { apiPost } from '@/lib/api';
 import Link from 'next/link';
 import { Mail, Loader2 } from 'lucide-react';
+import { mapAuthErrorMessage } from '@/lib/auth/error-messages';
+import { getSafeReturnTo } from '@/lib/auth/return-to';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
+  // Registration already signs the user in (see AuthContext.register) —
+  // verification is encouraged, not enforced, so the user's original
+  // destination (e.g. back to the Spay & Neuter booking flow) must not be
+  // lost here.
+  const next = getSafeReturnTo(searchParams.get('next'));
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +28,7 @@ function VerifyEmailContent() {
       await apiPost('/auth/email/resend-verification', { email });
       setSent(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to resend email');
+      setError(mapAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -56,6 +63,15 @@ function VerifyEmailContent() {
           {loading && <Loader2 size={18} className="animate-spin" />}
           {loading ? 'Resending...' : 'Resend Verification Email'}
         </button>
+      )}
+
+      {next !== '/' && (
+        <Link
+          href={next}
+          className="block w-full text-center bg-(--bpa-navy) text-white py-3 rounded-xl font-bold hover:bg-opacity-90 transition-all mb-4"
+        >
+          Continue
+        </Link>
       )}
 
       <p className="text-gray-500 text-sm">

@@ -9,9 +9,14 @@ const socialProviders = [
   { id: 'twitter', name: 'Twitter / X', icon: 'https://www.svgrepo.com/show/513008/twitter-154.svg', enabled: process.env.NEXT_PUBLIC_AUTH_TWITTER_ENABLED === 'true' },
 ];
 import { getApiOrigin } from '@/lib/utils/api-url';
+import { storeReturnToForRedirectFlow } from '@/lib/auth/return-to';
 
-export default function SocialLoginButtons() {
+export default function SocialLoginButtons({ next }: { next?: string | null }) {
   const handleSocialLogin = (provider: string) => {
+    // bpa_api's OAuth start/callback round-trip has no returnTo passthrough
+    // of its own (it always lands back on a hardcoded /auth/callback) — the
+    // destination is stashed here, same-site, and picked back up there.
+    storeReturnToForRedirectFlow(next);
     window.location.href = `${getApiOrigin()}/api/v1/auth/oauth/${provider}/start`;
   };
 

@@ -6,12 +6,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons';
 import Link from 'next/link';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { mapAuthErrorMessage } from '@/lib/auth/error-messages';
+import { getSafeReturnTo, withReturnTo } from '@/lib/auth/return-to';
 
 function SignInContent() {
   const { login, requestOtp, verifyOtp } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/';
+  const next = getSafeReturnTo(searchParams.get('next'));
 
   const [method, setMethod] = useState<'email' | 'mobile'>('email');
   const [email, setEmail] = useState('');
@@ -31,7 +33,7 @@ function SignInContent() {
       await login(email, password);
       router.push(next);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please check your credentials.');
+      setError(mapAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -49,7 +51,7 @@ function SignInContent() {
         alert(`Dev OTP: ${res.devOtp}`);
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP');
+      setError(mapAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ function SignInContent() {
       await verifyOtp(phone, otp);
       router.push(next);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
+      setError(mapAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -229,12 +231,12 @@ function SignInContent() {
           </div>
         </div>
 
-        <SocialLoginButtons />
+        <SocialLoginButtons next={next} />
       </div>
 
       <p className="mt-8 text-center text-gray-600 font-medium">
         Don&apos;t have an account?{' '}
-        <Link href="/auth/sign-up" className="text-(--bpa-navy) hover:text-(--bpa-green) transition-colors">
+        <Link href={withReturnTo('/auth/sign-up', next)} className="text-(--bpa-navy) hover:text-(--bpa-green) transition-colors">
           Sign Up
         </Link>
       </p>
