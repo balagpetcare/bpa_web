@@ -14,7 +14,7 @@ import Alert from '@/components/ui/Alert';
 import type { LocationValue } from '@/components/location/LocationSelector';
 import BookingLocationPicker from '@/components/location/BookingLocationPicker';
 import NotifyMeForm from '@/components/campaigns/NotifyMeForm';
-import { getCampaignBySlug, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
+import { getCampaignBySlug, getCampaignSessionById, createGuestPets, registerForCampaign } from '@/lib/api/campaigns';
 import { ApiError } from '@/lib/api';
 import { normalizeCampaignPricing, formatMoney } from '@/lib/utils/format';
 import { getPublicSiteSettings, type PublicSiteSettings } from '@/lib/api/site-settings';
@@ -102,6 +102,14 @@ function parseValidDate(value: unknown): Date | null {
   return d;
 }
 
+/** Normalises a Date to a canonical YYYY-MM-DD local date key. */
+function formatDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${y}-${mo}-${da}`;
+}
+
 /**
  * Extracts a canonical YYYY-MM-DD local date key from a session.
  * Falls back from sessionDate → startTime combo, then skips if still invalid.
@@ -116,11 +124,7 @@ function sessionDateKey(s: CampaignSession): string | null {
     }
     return null;
   }
-  // Normalise to YYYY-MM-DD in local time so grouping is consistent
-  const y = d.getFullYear();
-  const mo = String(d.getMonth() + 1).padStart(2, '0');
-  const da = String(d.getDate()).padStart(2, '0');
-  return `${y}-${mo}-${da}`;
+  return formatDateKey(d);
 }
 
 function getPeriod(startTime: string): SlotPeriod {
@@ -379,37 +383,54 @@ export default function RegistrationFormWrapper() {
   const [ownerLocationValue, setOwnerLocationValue] = useState<LocationValue>({});
   const [pets, setPets] = useState<PetInfo[]>([emptyPet()]);
 
+  // Initial load only needs campaign metadata (status/pricing/services) —
+  // NOT the full sessions collection, which could be hundreds of rows for a
+  // nationwide campaign. Sessions are fetched only once a location is
+  // chosen (below), already narrowed to a single proximity tier.
   useEffect(() => {
     Promise.all([
-      getCampaignBySlug(slug),
+      getCampaignBySlug(slug, undefined, undefined, false),
       getPublicSiteSettings(),
     ])
       .then(([c, settings]) => {
         setCampaign(c);
         setSiteSettings(settings);
-        if (preselectedSessionId && c) {
-          const s = c.sessions.find(x => x.id === preselectedSessionId);
-          if (s?.venue) {
-            setSelectedVenueId(s.venue.id);
-            setSelectedDate(sessionDateKey(s) ?? '');
-            setSelectedSessionId(s.id);
-            setStep(4);
-          }
-        }
         setLoading(false);
       })
       .catch(() => { setError('Failed to load campaign.'); setLoading(false); });
+  }, [slug]);
+
+  // Resolve a `?session=<id>` deep link via the single-session lookup
+  // endpoint (never the full sessions list), then reuse the normal
+  // location-tier fetch below to load just that area's sessions.
+  useEffect(() => {
+    if (!preselectedSessionId) return;
+    getCampaignSessionById(slug, preselectedSessionId)
+      .then((s) => {
+        if (!s?.venue) return;
+        setSelectedVenueId(s.venue.id);
+        setSelectedDate(sessionDateKey({ sessionDate: s.sessionDate } as CampaignSession) ?? '');
+        setSelectedSessionId(s.id);
+        setStep(4);
+        if (s.venue.locationId) setBookingLocationId(s.venue.locationId);
+      })
+      .catch(() => { /* deep link couldn't be resolved — user just starts at step 1 */ });
   }, [slug, preselectedSessionId]);
 
-  // Once a location is chosen (and it's not the "skip" escape hatch), ask the
-  // backend to filter this campaign's sessions to the single best-matching
-  // geographic tier (exact -> upazila/zone -> district/city corp -> division,
-  // or an explicit empty state). The backend never mixes tiers and never
-  // falls back to unrelated venues elsewhere in the campaign.
+  // Once a location is chosen, ask the backend to filter this campaign's
+  // sessions to the single best-matching geographic tier (exact -> upazila/
+  // zone -> district/city corp -> division, or an explicit empty state) —
+  // a small, area-scoped set, never the full campaign. The explicit "skip —
+  // show me all venues" escape hatch is the one deliberate, user-initiated
+  // exception that needs the complete campaign, since the user asked to see
+  // every venue rather than a specific area.
   useEffect(() => {
-    if (!bookingLocationId || bookingLocationId === 'skip') return;
+    if (!bookingLocationId) return;
     setLocationLoading(true);
-    getCampaignBySlug(slug, bookingLocationId)
+    const fetchCampaign = bookingLocationId === 'skip'
+      ? getCampaignBySlug(slug)
+      : getCampaignBySlug(slug, bookingLocationId);
+    fetchCampaign
       .then((c) => setCampaign(c))
       .catch(() => setError('Failed to load venues for your location.'))
       .finally(() => setLocationLoading(false));
@@ -869,7 +890,26 @@ export default function RegistrationFormWrapper() {
             <div>
               <h2 className="text-base font-bold text-(--bpa-navy) mb-0.5">Select a Location</h2>
 
-              {venueGroups.length === 0 && bookingLocationId && bookingLocationId !== 'skip' ? (
+              {!bookingLocationId ? (
+                // No location chosen yet — sessions haven't been fetched at
+                // all (venueGroups is legitimately empty here; that must
+                // never be read as "no venue exists" before we've even asked).
+                <div className="mt-3">
+                  <p className="text-xs text-gray-500 mb-4">
+                    Tell us your location so we can show the closest venues for this campaign first.
+                  </p>
+                  <BookingLocationPicker onSelect={(id) => setBookingLocationId(id)} />
+                  <button
+                    type="button"
+                    onClick={() => setBookingLocationId('skip')}
+                    className="mt-3 text-xs text-gray-400 hover:text-(--bpa-green) hover:underline"
+                  >
+                    Skip — show me all venues for this campaign
+                  </button>
+                </div>
+              ) : locationLoading ? (
+                <div className="text-center py-10 text-sm text-gray-400">Finding venues near you…</div>
+              ) : venueGroups.length === 0 && bookingLocationId !== 'skip' ? (
                 <div className="text-center py-10 px-4 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                   <Building2 size={28} className="mx-auto text-gray-300 mb-2" />
                   <p className="text-sm font-semibold text-(--bpa-navy) mb-1">
@@ -900,22 +940,6 @@ export default function RegistrationFormWrapper() {
                     <NotifyMeForm areaLabel={campaign?.title ?? 'this campaign'} />
                   </div>
                 </div>
-              ) : !bookingLocationId ? (
-                <div className="mt-3">
-                  <p className="text-xs text-gray-500 mb-4">
-                    Tell us your location so we can show the closest venues for this campaign first.
-                  </p>
-                  <BookingLocationPicker onSelect={(id) => setBookingLocationId(id)} />
-                  <button
-                    type="button"
-                    onClick={() => setBookingLocationId('skip')}
-                    className="mt-3 text-xs text-gray-400 hover:text-(--bpa-green) hover:underline"
-                  >
-                    Skip — show me all venues for this campaign
-                  </button>
-                </div>
-              ) : locationLoading ? (
-                <div className="text-center py-10 text-sm text-gray-400">Finding venues near you…</div>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-3">

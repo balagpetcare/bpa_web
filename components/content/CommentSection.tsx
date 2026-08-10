@@ -88,7 +88,7 @@ export default function CommentSection({ postId, initialComments = [], allowComm
               <button
                 type="submit"
                 disabled={submitting || !body.trim()}
-                className="absolute right-3 bottom-4 bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white p-2.5 rounded-xl disabled:opacity-40 disabled:hover:bg-(--bpa-green) transition shadow-md"
+                className="absolute right-3 bottom-4 bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white p-2.5 rounded-xl disabled:opacity-40 disabled:hover:bg-(--bpa-green) transition shadow-md"
                 aria-label="Submit comment"
               >
                 <Send size={16} />

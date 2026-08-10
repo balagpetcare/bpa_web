@@ -5,6 +5,8 @@ export interface PaginationMeta {
   limit: number;
   total: number;
   totalPages: number;
+  hasNext?: boolean;
+  hasPrev?: boolean;
 }
 
 export interface ApiResponse<T> {
@@ -241,6 +243,100 @@ export interface CampaignDetail extends CampaignListItem {
   // Present only when the request included ?locationId= — tells the caller
   // which single proximity tier `sessions` was filtered down to.
   venueMatch?: { tier: string; message: string };
+  // Present only when the request used ?includeSessions=false — `sessions`
+  // is `[]` in that case and this carries the small aggregate stats instead.
+  sessionStats?: CampaignSessionStats;
+}
+
+// ─── Campaign coverage summary & paginated sessions ───────────────
+
+export type SessionAvailability = 'available' | 'few_left' | 'full' | 'registration_closed' | 'completed';
+
+export interface CampaignSessionListItem {
+  id: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+  isActive: boolean;
+  notes: string | null;
+  status: SessionAvailability;
+  venue: {
+    id: string;
+    name: string;
+    address: string;
+    googleMapsUrl: string | null;
+    locationLabel: string;
+  } | null;
+}
+
+export interface CoverageVenueSummary {
+  id: string;
+  name: string;
+  address: string;
+  sessionCount: number;
+  capacity: number;
+  bookedCount: number;
+}
+
+export interface CoverageDistrictSummary {
+  id: string | null;
+  name: string;
+  venues: CoverageVenueSummary[];
+}
+
+export interface CoverageDivisionSummary {
+  id: string | null;
+  name: string;
+  districts: CoverageDistrictSummary[];
+}
+
+export interface CampaignCoverageSummary {
+  divisionsCovered: number;
+  districtsCovered: number;
+  venues: number;
+  sessions: number;
+  totalCapacity: number;
+  bookedCount: number;
+  availableSlots: number;
+  breakdown: CoverageDivisionSummary[];
+}
+
+// Small bounded aggregate returned alongside the campaign detail when
+// `includeSessions=false` is requested — everything the main campaign page
+// needs (hero/capacity stats) without downloading the raw sessions array.
+export interface CampaignSessionStats {
+  sessionCount: number;
+  totalCapacity: number;
+  totalBooked: number;
+  totalAvailable: number;
+  venueCount: number;
+  nextSession: { sessionDate: string; startTime: string; endTime: string; venueName: string | null } | null;
+  dayBreakdown: Array<{ date: string; capacity: number; bookedCount: number }>;
+  hasMoreDays: boolean;
+}
+
+// Single-session lookup response — backs `?session=<id>` deep-link
+// resolution for Register/Waitlist without downloading every session.
+export interface CampaignSessionLookupItem {
+  id: string;
+  sessionDate: string;
+  startTime: string;
+  endTime: string;
+  capacity: number;
+  bookedCount: number;
+  isActive: boolean;
+  notes: string | null;
+  status: SessionAvailability;
+  venue: {
+    id: string;
+    name: string;
+    address: string;
+    googleMapsUrl: string | null;
+    locationId: string | null;
+    locationLabel: string;
+  } | null;
 }
 
 export interface PetBooking {
@@ -406,7 +502,13 @@ export type HomepageSectionType =
   | 'committee'
   | 'cta'
   | 'partners'
-  | 'custom';
+  | 'custom'
+  | 'core_services'
+  | 'digital_ecosystem'
+  | 'furtail_community'
+  | 'video_hub'
+  | 'clinic_network'
+  | 'governance_documents';
 
 export interface HomepageSectionItem {
   id: string;

@@ -26,6 +26,14 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_COOKIE_NAME = 'bpa_user_session';
+
+function hasAuthCookie() {
+  if (typeof document === 'undefined') return false;
+  return document.cookie
+    .split('; ')
+    .some((cookie) => cookie.startsWith(`${AUTH_COOKIE_NAME}=`));
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -39,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         setUser(null);
       }
-    } catch (err) {
+    } catch {
       setUser(null);
     } finally {
       setLoading(false);
@@ -47,7 +55,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    refreshUser();
+    if (hasAuthCookie()) {
+      refreshUser();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email: string, password: string) => {

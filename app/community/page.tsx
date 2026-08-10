@@ -112,7 +112,7 @@ export default async function CommunityPage({ searchParams }: PageProps) {
               {q ? `We couldn't find any articles matching "${q}". Try another search term.` : 'Stay tuned for upcoming community posts!'}
             </p>
             {(q || categoryId) && (
-              <Link href="/community" className="inline-block bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white font-bold text-sm px-6 py-2.5 rounded-xl transition">
+              <Link href="/community" className="inline-block bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white font-bold text-sm px-6 py-2.5 rounded-xl transition">
                 Clear Filters
               </Link>
             )}

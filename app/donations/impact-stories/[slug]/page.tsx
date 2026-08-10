@@ -127,7 +127,7 @@ export default async function ImpactStoryPage({ params }: PageProps) {
             <p className="text-gray-500 mb-8">Every contribution, no matter the size, helps us rescue, treat, and care for animals in need.</p>
             <Link
               href={story.campaign?.id ? `/donate?campaign=${story.campaign.id}#donate-form` : `/donate#donate-form`}
-              className="inline-flex items-center justify-center gap-2 bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white py-4 px-8 rounded-xl text-lg font-bold transition-all transform hover:-translate-y-1 shadow-lg shadow-(--bpa-green)/20"
+              className="inline-flex items-center justify-center gap-2 bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white py-4 px-8 rounded-xl text-lg font-bold transition-all transform hover:-translate-y-1 shadow-lg shadow-(--bpa-green)/20"
             >
               <Heart size={20} className="fill-current" />
               Donate Now

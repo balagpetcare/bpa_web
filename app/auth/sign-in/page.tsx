@@ -202,7 +202,7 @@ function SignInContent() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="w-full bg-(--bpa-green) text-white py-3.5 rounded-xl font-bold hover:bg-(--bpa-green-dark) transition-all focus:ring-4 focus:ring-(--bpa-green)/30 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-2"
+                className="w-full bg-(--bpa-green) text-white py-3.5 rounded-xl font-bold hover:bg-(--color-bpa-button-hover) transition-all focus:ring-4 focus:ring-(--bpa-green)/30 disabled:opacity-70 disabled:cursor-not-allowed flex justify-center items-center gap-2 mt-2"
               >
                 {loading && <Loader2 size={18} className="animate-spin" />}
                 {loading ? 'Verifying...' : 'Verify & Sign In'}

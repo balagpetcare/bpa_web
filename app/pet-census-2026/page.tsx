@@ -76,7 +76,7 @@ export default async function PetCensusPage() {
               </p>
               <Link 
                 href="/"
-                className="inline-block bg-(--bpa-navy) text-white px-8 py-3 rounded-xl font-bold hover:bg-(--bpa-navy-light) transition-all"
+                className="inline-block bg-(--bpa-navy) text-white px-8 py-3 rounded-xl font-bold hover:bg-(--color-bpa-navy-light) transition-all"
               >
                 Back to Homepage
               </Link>

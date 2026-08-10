@@ -7,20 +7,30 @@ import { buildButtonClassName, BUTTON_VARIANT_CLASSES } from './button-variants'
 // leave the foreground alone while a static background changes) — never
 // leave a stale text-* color sitting on a new, same-or-similar background.
 
-test('primary: text stays white through hover/active, background darkens', () => {
+test('primary: text stays white through hover/active, background switches to canonical BPA blue', () => {
   const c = BUTTON_VARIANT_CLASSES.primary;
   assert.match(c, /\btext-white\b/);
   assert.doesNotMatch(c, /hover:text-/);
   assert.doesNotMatch(c, /active:text-/);
-  assert.match(c, /hover:bg-\(--color-bpa-green-dark\)/);
-  assert.match(c, /active:bg-\(--color-bpa-green-dark\)/);
+  assert.match(c, /hover:bg-\(--color-bpa-button-hover\)/);
+  assert.match(c, /active:bg-\(--color-bpa-button-hover\)/);
+  // Border (if any) must track the hover background so it never reads as a
+  // mismatched outline against the new blue fill.
+  assert.match(c, /hover:border-\(--color-bpa-button-hover\)/);
 });
 
-test('primary: disabled uses a solid muted background and readable text, not a translucent fade', () => {
+test('primary: never regresses to the undefined --bpa-green-dark custom property (the root cause of the white-on-white hover bug)', () => {
+  const c = BUTTON_VARIANT_CLASSES.primary;
+  assert.doesNotMatch(c, /\(--bpa-green-dark\)/);
+});
+
+test('primary: disabled uses a solid muted background and readable text, not a translucent fade, and never triggers the blue hover look', () => {
   const c = BUTTON_VARIANT_CLASSES.primary;
   assert.doesNotMatch(c, /disabled:opacity/);
   assert.match(c, /disabled:bg-gray-200/);
   assert.match(c, /disabled:text-gray-500/);
+  assert.match(c, /disabled:hover:bg-gray-200/);
+  assert.doesNotMatch(c, /disabled:hover:bg-\(--color-bpa-button-hover\)/);
 });
 
 test('outline: hover never pairs unchanged green text with a green-ish background (the original bug)', () => {

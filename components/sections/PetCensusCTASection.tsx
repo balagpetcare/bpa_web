@@ -77,7 +77,7 @@ export default function PetCensusCTASection({ settings }: Props) {
               <div className="pt-4 flex flex-col sm:flex-row items-center gap-4">
                 <Link
                   href="/pet-census-2026"
-                  className="inline-flex items-center gap-2 bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white px-8 py-4 rounded-xl font-bold text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-center w-full sm:w-auto justify-center"
+                  className="inline-flex items-center gap-2 bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white px-8 py-4 rounded-xl font-bold text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all text-center w-full sm:w-auto justify-center"
                 >
                   Register Your Pets <ChevronRight size={18} />
                 </Link>

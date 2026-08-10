@@ -143,7 +143,7 @@ export default function MobileNav({ isOpen, onClose }: MobileNavProps) {
           <Link
             href="/donate"
             onClick={onClose}
-            className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white text-sm font-bold py-3 px-4 rounded-lg hover:bg-(--bpa-green-dark) transition-colors"
+            className="flex items-center justify-center gap-2 w-full bg-(--bpa-green) text-white text-sm font-bold py-3 px-4 rounded-lg hover:bg-(--color-bpa-button-hover) transition-colors"
           >
             <Heart size={15} className="fill-current" />
             Donate Now

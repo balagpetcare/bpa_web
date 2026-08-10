@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Search, Loader2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Alert from '@/components/ui/Alert';
-import { getCampaignBySlug, joinWaitlist } from '@/lib/api/campaigns';
-import type { CampaignDetail, CampaignWaitlistEntry } from '@/types/bpa.types';
+import { getCampaignBySlug, getCampaignSessions, getCampaignSessionById, joinWaitlist } from '@/lib/api/campaigns';
+import type { CampaignDetail, CampaignWaitlistEntry, CampaignSessionListItem } from '@/types/bpa.types';
+
+const SESSION_PAGE_SIZE = 20;
 
 export default function WaitlistFormWrapper() {
   const params = useParams<{ slug: string }>();
@@ -27,11 +29,55 @@ export default function WaitlistFormWrapper() {
   const [email, setEmail] = useState('');
   const [petCount, setPetCount] = useState(1);
 
+  // Session picker: paginated/searchable, never a full campaign.sessions
+  // dump — see GET /public/campaigns/:slug/sessions.
+  const [sessions, setSessions] = useState<CampaignSessionListItem[]>([]);
+  const [sessionsPage, setSessionsPage] = useState(1);
+  const [sessionsHasNext, setSessionsHasNext] = useState(false);
+  const [sessionSearchInput, setSessionSearchInput] = useState('');
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [loadingSessions, setLoadingSessions] = useState(true);
+  // A deep-linked (?session=) session may not be on the first fetched page —
+  // resolved separately by id so the user is never forced to search for it.
+  const [preselectedResolved, setPreselectedResolved] = useState<CampaignSessionListItem | null>(null);
+
+  // Campaign metadata only (status/pricing/title) — never the full sessions array.
   useEffect(() => {
-    getCampaignBySlug(slug)
+    getCampaignBySlug(slug, undefined, undefined, false)
       .then(c => { setCampaign(c); setLoading(false); })
       .catch(() => { setError('Failed to load campaign.'); setLoading(false); });
   }, [slug]);
+
+  useEffect(() => {
+    if (!preselectedSession) return;
+    getCampaignSessionById(slug, preselectedSession).then(setPreselectedResolved).catch(() => {});
+  }, [slug, preselectedSession]);
+
+  const fetchSessions = useCallback((page: number, search: string, mode: 'replace' | 'append') => {
+    setLoadingSessions(true);
+    getCampaignSessions(slug, { search: search || undefined, tab: 'upcoming', page, limit: SESSION_PAGE_SIZE })
+      .then(({ items, meta }) => {
+        setSessions((prev) => (mode === 'append' ? [...prev, ...items] : items));
+        setSessionsPage(page);
+        setSessionsHasNext(Boolean(meta.hasNext ?? (meta.page < meta.totalPages)));
+      })
+      .catch(() => { /* keep prior list on transient failure */ })
+      .finally(() => setLoadingSessions(false));
+  }, [slug]);
+
+  useEffect(() => { fetchSessions(1, sessionSearch, 'replace'); }, [fetchSessions, sessionSearch]);
+
+  function onSessionSearchSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSessionSearch(sessionSearchInput.trim());
+  }
+
+  // Merge the deep-linked session into the visible list even if it isn't on
+  // the current page/search results, so the user never has to search for it.
+  const sessionOptions = useMemo(() => {
+    if (!preselectedResolved || sessions.some((s) => s.id === preselectedResolved.id)) return sessions;
+    return [preselectedResolved, ...sessions];
+  }, [sessions, preselectedResolved]);
 
   if (loading) return <div className="flex justify-center py-24"><div className="animate-spin rounded-full h-8 w-8 border-2 border-(--bpa-navy) border-t-transparent" /></div>;
   if (!campaign) return <div className="text-center py-24 text-gray-500">Campaign not found.</div>;
@@ -111,18 +157,48 @@ export default function WaitlistFormWrapper() {
 
           {/* Session */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Session <span className="text-red-500">*</span></label>
-            <div className="space-y-2">
-              {campaign.sessions.filter(s => s.isActive).map(s => (
-                <label key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${sessionId === s.id ? 'border-(--bpa-navy) bg-(--bpa-green)' : 'border-gray-200 hover:border-(--bpa-navy)'}`}>
-                  <input type="radio" name="session" value={s.id} checked={sessionId === s.id} onChange={() => setSessionId(s.id)} className="accent-(--bpa-navy)" />
-                  <div>
-                    <p className="text-sm font-medium text-(--bpa-green)">{s.venue?.name ?? 'TBC'}</p>
-                    <p className="text-xs text-gray-400">{new Date(s.sessionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {s.startTime}–{s.endTime}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
+            <label htmlFor="waitlist-session-search" className="block text-sm font-medium text-gray-700 mb-2">Session <span className="text-red-500">*</span></label>
+
+            <form onSubmit={onSessionSearchSubmit} className="mb-3">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="waitlist-session-search"
+                  type="search"
+                  value={sessionSearchInput}
+                  onChange={(e) => setSessionSearchInput(e.target.value)}
+                  placeholder="Search venue, district or area…"
+                  className="w-full rounded-lg border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-(--bpa-green)"
+                />
+              </div>
+            </form>
+
+            {sessionOptions.length === 0 && !loadingSessions ? (
+              <p className="text-sm text-gray-400 text-center py-4">No upcoming sessions match your search.</p>
+            ) : (
+              <div className="space-y-2">
+                {sessionOptions.map(s => (
+                  <label key={s.id} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-colors ${sessionId === s.id ? 'border-(--bpa-navy) bg-(--bpa-green)' : 'border-gray-200 hover:border-(--bpa-navy)'}`}>
+                    <input type="radio" name="session" value={s.id} checked={sessionId === s.id} onChange={() => setSessionId(s.id)} className="accent-(--bpa-navy)" />
+                    <div>
+                      <p className="text-sm font-medium text-(--bpa-green)">{s.venue?.name ?? 'TBC'}</p>
+                      <p className="text-xs text-gray-400">{new Date(s.sessionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} · {s.startTime}–{s.endTime}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {sessionsHasNext && (
+              <button
+                type="button"
+                onClick={() => fetchSessions(sessionsPage + 1, sessionSearch, 'append')}
+                disabled={loadingSessions}
+                className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-(--bpa-green) hover:underline disabled:opacity-60"
+              >
+                {loadingSessions && <Loader2 size={12} className="animate-spin" />} Load more sessions
+              </button>
+            )}
           </div>
 
           {/* Name */}

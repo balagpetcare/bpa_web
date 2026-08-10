@@ -12,6 +12,9 @@ import type {
   RegisterResponse,
   JoinWaitlistPayload,
   PaginationMeta,
+  CampaignCoverageSummary,
+  CampaignSessionListItem,
+  CampaignSessionLookupItem,
 } from '@/types/bpa.types';
 
 export interface CampaignListParams {
@@ -91,10 +94,74 @@ export async function getCampaignsList(params: CampaignListParams = {}, fetchOpt
   return { items: res.data, meta: res.meta as PaginationMeta };
 }
 
-export async function getCampaignBySlug(slug: string, locationId?: string, fetchOptions?: RequestInit) {
-  const qs = locationId ? `?locationId=${locationId}` : '';
-  const res = await apiFetch<CampaignDetail>(`/public/campaigns/${slug}${qs}`, fetchOptions);
+// `includeSessions` defaults to true, preserving the original full-payload
+// contract for every existing caller. Pass `false` to fetch metadata +
+// bounded `sessionStats` only — used where the raw sessions array isn't
+// actually needed (e.g. the main campaign page, or a form's initial load
+// before a location/session has been chosen).
+export async function getCampaignBySlug(
+  slug: string,
+  locationId?: string,
+  fetchOptions?: RequestInit,
+  includeSessions: boolean = true,
+) {
+  const q = new URLSearchParams();
+  if (locationId) q.set('locationId', locationId);
+  if (!includeSessions) q.set('includeSessions', 'false');
+  const qs = q.toString();
+  const res = await apiFetch<CampaignDetail>(`/public/campaigns/${slug}${qs ? `?${qs}` : ''}`, fetchOptions);
   return res.data;
+}
+
+// Resolves exactly one session by its canonical UUID — used to resume a
+// `?session=<id>` deep link without downloading every session in the
+// campaign to find it.
+export async function getCampaignSessionById(
+  slug: string,
+  sessionId: string,
+  fetchOptions?: RequestInit,
+): Promise<CampaignSessionLookupItem | null> {
+  try {
+    const res = await apiFetch<CampaignSessionLookupItem>(`/public/campaigns/${slug}/sessions/${sessionId}`, fetchOptions);
+    return res.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getCampaignCoverage(slug: string, fetchOptions?: RequestInit): Promise<CampaignCoverageSummary> {
+  const res = await apiFetch<CampaignCoverageSummary>(`/public/campaigns/${slug}/coverage`, fetchOptions);
+  return res.data;
+}
+
+export interface CampaignSessionsParams {
+  search?: string;
+  divisionId?: string;
+  districtId?: string;
+  date?: string;
+  availability?: string;
+  tab?: 'upcoming' | 'past';
+  page?: number;
+  limit?: number;
+}
+
+export async function getCampaignSessions(
+  slug: string,
+  params: CampaignSessionsParams = {},
+  fetchOptions?: RequestInit,
+): Promise<{ items: CampaignSessionListItem[]; meta: PaginationMeta }> {
+  const q = new URLSearchParams();
+  if (params.search) q.set('search', params.search);
+  if (params.divisionId) q.set('divisionId', params.divisionId);
+  if (params.districtId) q.set('districtId', params.districtId);
+  if (params.date) q.set('date', params.date);
+  if (params.availability) q.set('availability', params.availability);
+  if (params.tab) q.set('tab', params.tab);
+  if (params.page) q.set('page', String(params.page));
+  if (params.limit) q.set('limit', String(params.limit));
+  const qs = q.toString();
+  const res = await apiFetch<CampaignSessionListItem[]>(`/public/campaigns/${slug}/sessions${qs ? `?${qs}` : ''}`, fetchOptions);
+  return { items: res.data, meta: res.meta as PaginationMeta };
 }
 
 export async function getBookingByNumber(bookingNumber: string, fetchOptions?: RequestInit) {

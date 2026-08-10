@@ -65,7 +65,7 @@ export default function DonationCampaignCard({ campaign }: DonationCampaignCardP
 
           <Link
             href={`/donate?campaign=${campaign.id}`}
-            className="block w-full text-center bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white font-bold py-2.5 rounded-lg transition-colors"
+            className="block w-full text-center bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white font-bold py-2.5 rounded-lg transition-colors"
           >
             Donate to this Campaign
           </Link>

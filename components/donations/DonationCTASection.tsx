@@ -42,7 +42,7 @@ export default function DonationCTASection({
   const textSub = theme === 'cream' ? 'text-amber-800/70' : 'text-white/75';
   const btnPrimary =
     theme === 'cream'
-      ? 'bg-(--bpa-green) text-white hover:bg-(--bpa-green-dark)'
+      ? 'bg-(--bpa-green) text-white hover:bg-(--color-bpa-button-hover)'
       : 'bg-white text-(--bpa-navy) hover:bg-gray-50';
   const btnSecondary =
     theme === 'cream'

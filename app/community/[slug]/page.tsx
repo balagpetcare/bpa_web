@@ -170,7 +170,7 @@ export default async function CommunityDetailPage({ params }: Props) {
                 <Link
                   href={post.ctaUrl}
                   target={post.ctaUrl.startsWith('http') ? '_blank' : '_self'}
-                  className="inline-flex items-center gap-2 bg-(--bpa-green) hover:bg-(--bpa-green-dark) text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-md w-full sm:w-auto justify-center"
+                  className="inline-flex items-center gap-2 bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white font-bold text-sm px-6 py-3 rounded-xl transition shadow-md w-full sm:w-auto justify-center"
                 >
                   {post.ctaLabelEn} <ExternalLink size={14} />
                 </Link>

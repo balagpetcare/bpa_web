@@ -23,15 +23,22 @@ export const BUTTON_BASE_CLASSES =
   'disabled:cursor-not-allowed active:scale-[0.97]';
 
 export const BUTTON_VARIANT_CLASSES: Record<ButtonVariant, string> = {
-  // Confirmed/primary action: green bg + white text at every interactive
-  // state — text color never changes, so it can never vanish into the
-  // background. Disabled uses a solid muted gray, not a faded green.
+  // Confirmed/primary action: green bg by default, switching to the
+  // canonical BPA blue on hover/active — text stays white at every
+  // interactive state, so it can never vanish into the background. (Root
+  // cause this fixes: pages that hand-rolled this same green-CTA look
+  // referenced a bare, never-defined "green dark" custom property instead
+  // of its namespaced theme-token counterpart — an unresolvable var()
+  // computes to its property's initial value, so the hover background
+  // silently became transparent while the unconditional white text stayed,
+  // producing invisible white-on-white buttons on hover.) Disabled uses a
+  // solid muted gray, not a faded green.
   primary:
-    'bg-(--color-bpa-green) text-white ' +
-    'hover:bg-(--color-bpa-green-dark) ' +
-    'active:bg-(--color-bpa-green-dark) ' +
+    'bg-(--color-bpa-green) text-white border border-transparent ' +
+    'hover:bg-(--color-bpa-button-hover) hover:border-(--color-bpa-button-hover) ' +
+    'active:bg-(--color-bpa-button-hover) active:border-(--color-bpa-button-hover) ' +
     'focus-visible:ring-(--bpa-navy) ' +
-    'disabled:bg-gray-200 disabled:text-gray-500 disabled:hover:bg-gray-200',
+    'disabled:bg-gray-200 disabled:text-gray-500 disabled:border-transparent disabled:hover:bg-gray-200 disabled:hover:border-transparent',
   // Secondary/outline: green text + green border on a transparent surface.
   // Hover moves to the accent-yellow surface with DARK green text/border —
   // never the base green text on a green hover background.

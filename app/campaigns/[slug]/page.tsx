@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Breadcrumb from '@/components/ui/Breadcrumb';
@@ -7,14 +8,16 @@ import CountdownTimer from '@/components/campaigns/CountdownTimer';
 import CampaignStickyBar from '@/components/campaigns/CampaignStickyBar';
 import CampaignJsonLd from '@/components/campaigns/CampaignJsonLd';
 import CampaignGallery from '@/components/campaigns/CampaignGallery';
-import { getCampaignBySlug, getCampaignsList, getCampaignFaqs } from '@/lib/api/campaigns';
+import CoverageSummary from '@/components/campaigns/CoverageSummary';
+import SessionsExplorer from '@/components/campaigns/SessionsExplorer';
+import { getCampaignBySlug, getCampaignsList, getCampaignFaqs, getCampaignCoverage } from '@/lib/api/campaigns';
 import {
   CalendarDays, MapPin, Users, Syringe, Clock, BanknoteIcon,
-  ArrowLeft, CheckCircle, AlertCircle, Info, ChevronDown, Building2,
+  ArrowLeft, CheckCircle, AlertCircle, Info, ChevronDown,
   Activity, ShieldCheck, CreditCard, FlaskConical,
   Target, TrendingUp,
 } from 'lucide-react';
-import type { CampaignSession, CampaignStatus, CampaignType, CampaignService, CampaignMedia, CampaignFaq } from '@/types/bpa.types';
+import type { CampaignStatus, CampaignType, CampaignService, CampaignMedia, CampaignFaq, CampaignCoverageSummary } from '@/types/bpa.types';
 import { formatMoney, toDisplayString, getCampaignMediaUrl, getCampaignRoleUrl } from '@/lib/utils/format';
 
 export const revalidate = 60;
@@ -34,7 +37,8 @@ interface PageProps { params: Promise<{ slug: string }> }
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
   try {
-    const campaign = await getCampaignBySlug(slug, undefined, { next: { revalidate: 60 } });
+    // Metadata only needs title/description/media — never the sessions array.
+    const campaign = await getCampaignBySlug(slug, undefined, { next: { revalidate: 60 } }, false);
     if (!campaign) return {};
     const desc = campaign.description ?? `Register your pets for ${campaign.title} by Bangladesh Pet Association.`;
     const heroImg = getCampaignMediaUrl(campaign, 'hero');
@@ -114,6 +118,20 @@ function StatPill({ label, value, color = 'green' }: { label: string; value: str
   );
 }
 
+function SessionsExplorerSkeleton() {
+  return (
+    <div className="space-y-4" aria-busy="true" aria-label="Loading sessions">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-2xl border border-gray-200 bg-white p-5 animate-pulse">
+          <div className="h-4 w-1/3 bg-gray-200 rounded mb-3" />
+          <div className="h-3 w-1/2 bg-gray-100 rounded mb-4" />
+          <div className="h-8 w-full bg-gray-100 rounded" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function CapacityBar({ booked, total, label }: { booked: number; total: number; label: string }) {
   const pct = total > 0 ? Math.min(100, Math.round((booked / total) * 100)) : 0;
   const available = total - booked;
@@ -134,83 +152,6 @@ function CapacityBar({ booked, total, label }: { booked: number; total: number; 
   );
 }
 
-function SessionCard({ session, campaignSlug, canRegister }: { session: CampaignSession; campaignSlug: string; canRegister: boolean }) {
-  const available = session.capacity - session.bookedCount;
-  const isFull = available <= 0;
-  const pct = Math.min(100, Math.round((session.bookedCount / session.capacity) * 100));
-  const isAlmostFull = !isFull && available <= Math.max(5, Math.round(session.capacity * 0.1));
-
-  const statusBadge = isFull
-    ? <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Full</span>
-    : isAlmostFull
-    ? <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Almost Full</span>
-    : <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">Available</span>;
-
-  return (
-    <div className={`rounded-2xl border p-5 transition-shadow hover:shadow-md ${isFull ? 'border-gray-200 bg-gray-50/60' : 'border-gray-200 bg-white'}`}>
-      {/* Top row */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <p className="font-bold text-(--bpa-navy) text-sm">{session.venue?.name ?? 'TBC'}</p>
-            {statusBadge}
-          </div>
-          {session.venue?.address && (
-            <p className="text-xs text-gray-500">{session.venue.address}</p>
-          )}
-          {session.venue?.zone && (
-            <p className="text-xs text-gray-400">
-              {session.venue.zone.name}, {session.venue.zone.cityCorporation?.name}
-            </p>
-          )}
-          {session.venue?.googleMapsUrl && (
-            <a href={session.venue.googleMapsUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-(--bpa-green) hover:underline mt-1">
-              <MapPin size={10} /> View on Maps
-            </a>
-          )}
-        </div>
-        <div className="shrink-0">
-          {canRegister && !isFull && session.isActive ? (
-            <Link href={`/campaigns/${campaignSlug}/register?session=${session.id}`}
-              className="inline-flex items-center justify-center bg-(--bpa-green) text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-(--color-bpa-green-dark) transition-colors">
-              Register
-            </Link>
-          ) : canRegister ? (
-            <Link href={`/campaigns/${campaignSlug}/waitlist?session=${session.id}`}
-              className="inline-flex items-center justify-center border border-(--bpa-green) text-(--bpa-green) text-xs font-semibold px-4 py-2 rounded-lg hover:bg-(--bpa-green-light) transition-colors">
-              Waitlist
-            </Link>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Date/time row */}
-      <div className="flex items-center gap-4 text-xs text-gray-500 mb-3 bg-gray-50 rounded-lg px-3 py-2">
-        <span className="flex items-center gap-1.5"><CalendarDays size={12} className="text-(--bpa-green)" />{fmtDateShort(session.sessionDate)}</span>
-        <span className="flex items-center gap-1.5"><Clock size={12} className="text-(--bpa-green)" />{session.startTime} – {session.endTime}</span>
-      </div>
-
-      {/* Capacity bar */}
-      <div>
-        <div className="flex items-center justify-between text-xs mb-1">
-          <span className="text-gray-400">{session.bookedCount} / {session.capacity} booked</span>
-          <span className={isFull ? 'text-red-600 font-bold' : isAlmostFull ? 'text-amber-600 font-semibold' : 'text-emerald-600 font-semibold'}>
-            {isFull ? 'No slots left' : `${available} slot${available !== 1 ? 's' : ''} available`}
-          </span>
-        </div>
-        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${isFull ? 'bg-red-500' : isAlmostFull ? 'bg-amber-500' : 'bg-(--bpa-green)'}`}
-            style={{ width: `${pct}%` }} />
-        </div>
-      </div>
-
-      {session.notes && (
-        <p className="text-xs text-gray-400 mt-2 italic">{session.notes}</p>
-      )}
-    </div>
-  );
-}
 
 function VaccineCard({ service }: { service: CampaignService }) {
   const vc = service.vaccineCatalog;
@@ -269,10 +210,21 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   const { slug } = await params;
   let campaign: Awaited<ReturnType<typeof getCampaignBySlug>>;
   let campaignFaqs: CampaignFaq[] = [];
+  // Coverage summary is a compact aggregate, not a full session dump — safe
+  // to fetch alongside the campaign detail. Missing/failed coverage data
+  // must never break the page, so it degrades to null on failure.
+  let coverageSummary: CampaignCoverageSummary | null = null;
 
   try {
-    campaign = await getCampaignBySlug(slug, undefined, { next: { revalidate: 60, tags: [`campaign-${slug}`] } });
-    campaignFaqs = await getCampaignFaqs(slug, { next: { revalidate: 60 } });
+    // includeSessions=false: the main page only ever needs metadata + the
+    // small `sessionStats` aggregate below, never the raw sessions array —
+    // that would mean downloading hundreds of session rows just to render
+    // a title, hero, pricing and an FAQ list.
+    [campaign, campaignFaqs, coverageSummary] = await Promise.all([
+      getCampaignBySlug(slug, undefined, { next: { revalidate: 60, tags: [`campaign-${slug}`] } }, false),
+      getCampaignFaqs(slug, { next: { revalidate: 60 } }),
+      getCampaignCoverage(slug, { next: { revalidate: 60, tags: [`campaign-${slug}`] } }).catch(() => null),
+    ]);
   } catch {
     notFound();
   }
@@ -292,47 +244,26 @@ export default async function CampaignDetailPage({ params }: PageProps) {
     : 0;
   const hasPricingDiscount = servicesTotalBdt > 0 && discountAmountBdt > 0;
 
-  // ── Computed stats ────────────────────────────────────────────────
-  const totalCapacity  = campaign.sessions.reduce((a, s) => a + s.capacity, 0);
-  const totalBooked    = campaign.sessions.reduce((a, s) => a + s.bookedCount, 0);
-  const totalAvailable = Math.max(0, totalCapacity - totalBooked);
-  const uniqueVenues   = [...new Set(campaign.sessions.map(s => s.venue?.id).filter(Boolean))];
-  const activeSessions = campaign.sessions.filter(s => s.isActive);
+  // ── Computed stats ──────────────────────────────────────────────────
+  // Sourced entirely from the backend-computed `sessionStats` aggregate
+  // (see getCampaignSessionStats) — `campaign.sessions` is intentionally
+  // `[]` on this page (includeSessions=false above), so none of this ever
+  // scales with the campaign's actual session count.
+  const stats = campaign.sessionStats;
+  const totalCapacity  = stats?.totalCapacity ?? 0;
+  const totalBooked    = stats?.totalBooked ?? 0;
+  const totalAvailable = stats?.totalAvailable ?? 0;
+  const venueCount     = stats?.venueCount ?? 0;
+  const sessionCount   = stats?.sessionCount ?? 0;
 
-  // Next available session
-  const nextSession = activeSessions
-    .filter(s => s.bookedCount < s.capacity && new Date(s.sessionDate) >= now)
-    .sort((a, b) => a.sessionDate.localeCompare(b.sessionDate))[0] ?? null;
-
-  const nextSessionLabel = nextSession
-    ? `${fmtDateMobile(nextSession.sessionDate)} · ${nextSession.venue?.name ?? ''}`
+  const nextSessionLabel = stats?.nextSession
+    ? `${fmtDateMobile(stats.nextSession.sessionDate)} · ${stats.nextSession.venueName ?? ''}`
     : null;
 
-  // ── Group sessions by date ────────────────────────────────────────
-  const sessionsByDate: Record<string, CampaignSession[]> = {};
-  for (const s of campaign.sessions) {
-    if (!sessionsByDate[s.sessionDate]) sessionsByDate[s.sessionDate] = [];
-    sessionsByDate[s.sessionDate].push(s);
-  }
-  const sortedDates = Object.keys(sessionsByDate).sort();
-
-  // ── Coverage areas (group venues by zone/city) ────────────────────
-  const coverageMap: Record<string, { city: string; zone: string; venues: CampaignSession['venue'][] }> = {};
-  for (const s of campaign.sessions) {
-    if (!s.venue) continue;
-    const key = s.venue.id;
-    if (!coverageMap[key]) {
-      const city = s.venue.zone?.cityCorporation?.name ?? 'Unknown';
-      const zone = s.venue.zone?.name ?? '';
-      coverageMap[key] = { city, zone, venues: [s.venue] };
-    }
-  }
-  // Group by city
-  const byCity: Record<string, Array<{ zone: string; venue: CampaignSession['venue'] }>> = {};
-  for (const { city, zone, venues } of Object.values(coverageMap)) {
-    if (!byCity[city]) byCity[city] = [];
-    byCity[city].push({ zone, venue: venues[0] });
-  }
+  // ── Per-day capacity breakdown (already bounded + bucketed server-side —
+  // see MAX_DAY_BREAKDOWN_ROWS in getCampaignSessionStats) ────────────
+  const capacityDayBars = stats?.dayBreakdown ?? [];
+  const hiddenCapacityDayCount = stats?.hasMoreDays ? 1 : 0; // exact hidden count isn't tracked server-side; only used to show/hide the "+more" note
 
   // ── Key dates timeline ────────────────────────────────────────────
   const keyDates = [
@@ -355,10 +286,13 @@ export default async function CampaignDetailPage({ params }: PageProps) {
   const seoImageUrl     = getCampaignMediaUrl(campaign, 'thumbnail');
 
   // ── Venue list for JSON-LD ────────────────────────────────────────
-  const venuesForSchema = Object.values(coverageMap).map(({ venues }) => ({
-    name: venues[0]?.name ?? '',
-    address: venues[0]?.address ?? null,
-  }));
+  // Sourced from the already-fetched coverage summary (a small, bounded
+  // venue list) rather than deduping the sessions array — this page never
+  // downloads the raw sessions collection in the first place.
+  const venuesForSchema = (coverageSummary?.breakdown ?? [])
+    .flatMap((division) => division.districts)
+    .flatMap((district) => district.venues)
+    .map((venue) => ({ name: venue.name, address: venue.address ?? null }));
 
   return (
     <>
@@ -428,10 +362,10 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                   <CalendarDays size={18} className="text-white/40" />
                   {fmtDateShort(campaign.startDate)} – {fmtDateShort(campaign.endDate)}
                 </span>
-                {uniqueVenues.length > 0 && (
+                {venueCount > 0 && (
                   <span className="flex items-center gap-2">
                     <MapPin size={18} className="text-white/40" />
-                    {uniqueVenues.length} venue{uniqueVenues.length !== 1 ? 's' : ''}
+                    {venueCount} venue{venueCount !== 1 ? 's' : ''}
                   </span>
                 )}
                 {totalCapacity > 0 && (
@@ -507,8 +441,8 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                     { icon: <BanknoteIcon size={16} />, label: 'Fee Per Pet', value: isFree ? 'Free' : formatMoney(campaignFeeBdt) },
                     { icon: <Users size={16} />, label: 'Max Pets / Booking', value: `${campaign.maxPetsPerBooking} pets` },
                     { icon: <Syringe size={16} />, label: 'Services Included', value: `${campaign.services.length} vaccine service${campaign.services.length !== 1 ? 's' : ''}` },
-                    { icon: <MapPin size={16} />, label: 'Venues', value: `${uniqueVenues.length} location${uniqueVenues.length !== 1 ? 's' : ''}` },
-                    { icon: <Activity size={16} />, label: 'Total Sessions', value: `${campaign.sessions.length} session${campaign.sessions.length !== 1 ? 's' : ''}` },
+                    { icon: <MapPin size={16} />, label: 'Venues', value: `${venueCount} location${venueCount !== 1 ? 's' : ''}` },
+                    { icon: <Activity size={16} />, label: 'Total Sessions', value: `${sessionCount} session${sessionCount !== 1 ? 's' : ''}` },
                   ].map(({ icon, label, value }) => (
                     <div key={label} className="flex items-start gap-3 bg-gray-50 rounded-xl p-4 border border-gray-100">
                       <div className="text-(--bpa-green) mt-0.5">{icon}</div>
@@ -531,23 +465,22 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                   <StatPill label="Total Capacity"  value={totalCapacity.toLocaleString()}  color="navy" />
                   <StatPill label="Booked"          value={totalBooked.toLocaleString()}     color="amber" />
                   <StatPill label="Available"       value={totalAvailable.toLocaleString()}  color={totalAvailable === 0 ? 'red' : 'green'} />
-                  <StatPill label="Venues"          value={uniqueVenues.length}              color="navy" />
+                  <StatPill label="Venues"          value={venueCount}                       color="navy" />
                 </div>
 
                 <div className="space-y-5 bg-white rounded-2xl border border-gray-200 p-6">
                   <CapacityBar booked={totalBooked} total={totalCapacity} label="Overall Campaign Capacity" />
-                  {sortedDates.map(date => {
-                    const dayBooked = sessionsByDate[date].reduce((a, s) => a + s.bookedCount, 0);
-                    const dayTotal  = sessionsByDate[date].reduce((a, s) => a + s.capacity, 0);
-                    return (
-                      <CapacityBar
-                        key={date}
-                        booked={dayBooked}
-                        total={dayTotal}
-                        label={new Date(date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
-                      />
-                    );
-                  })}
+                  {capacityDayBars.map(day => (
+                    <CapacityBar
+                      key={day.date}
+                      booked={day.bookedCount}
+                      total={day.capacity}
+                      label={new Date(day.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    />
+                  ))}
+                  {hiddenCapacityDayCount > 0 && (
+                    <p className="text-xs text-gray-400 text-center">More dates available — see Sessions & Venues below for the full schedule</p>
+                  )}
                 </div>
               </section>
             )}
@@ -565,60 +498,12 @@ export default async function CampaignDetailPage({ params }: PageProps) {
             )}
 
             {/* ─── SECTION 4: COVERAGE AREAS ───────────────────── */}
-            {Object.keys(byCity).length > 0 && (
-              <section id="locations">
-                <SectionHeading><Building2 size={20} className="text-(--bpa-green)" />Coverage Areas</SectionHeading>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {Object.entries(byCity).map(([city, entries]) => (
-                    <div key={city} className="bg-white rounded-2xl border border-gray-200 p-5">
-                      <h4 className="font-bold text-(--bpa-navy) mb-3 flex items-center gap-2">
-                        <MapPin size={14} className="text-(--bpa-green)" />{city}
-                      </h4>
-                      <div className="space-y-3">
-                        {entries.map(({ zone, venue }) => (
-                          <div key={venue?.id} className="pl-4 border-l-2 border-(--bpa-green-light)">
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{zone}</p>
-                            <p className="text-sm font-medium text-(--bpa-navy)">{venue?.name}</p>
-                            {venue?.address && <p className="text-xs text-gray-400">{venue.address}</p>}
-                            {venue?.googleMapsUrl && (
-                              <a href={venue.googleMapsUrl} target="_blank" rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-(--bpa-green) hover:underline mt-1">
-                                <MapPin size={9} /> View on Maps
-                              </a>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            <CoverageSummary campaignTitle={campaign.title} summary={coverageSummary} />
 
             {/* ─── SECTION 5: SESSIONS ─────────────────────────── */}
-            {campaign.sessions.length > 0 && (
-              <section id="sessions">
-                <SectionHeading><CalendarDays size={20} className="text-(--bpa-green)" />Sessions & Venues</SectionHeading>
-                <div className="space-y-8">
-                  {sortedDates.map(date => (
-                    <div key={date}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="flex-1 h-px bg-gray-200" />
-                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                          {new Date(date).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
-                        </p>
-                        <div className="flex-1 h-px bg-gray-200" />
-                      </div>
-                      <div className="space-y-4">
-                        {sessionsByDate[date].map(s => (
-                          <SessionCard key={s.id} session={s} campaignSlug={slug} canRegister={canRegister} />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
+            <Suspense fallback={<SessionsExplorerSkeleton />}>
+              <SessionsExplorer campaignSlug={slug} />
+            </Suspense>
 
             {/* ─── SECTION 6: REGISTRATION INFORMATION ─────────── */}
             <section id="registration-info">
@@ -781,12 +666,12 @@ export default async function CampaignDetailPage({ params }: PageProps) {
                   )}
 
                   {/* Next session */}
-                  {nextSession && (
+                  {stats?.nextSession && (
                     <div className="bg-gray-50 rounded-xl p-3 text-xs">
                       <p className="text-gray-400 font-semibold uppercase tracking-wide mb-1">Next Available Session</p>
-                      <p className="font-bold text-(--bpa-navy)">{fmtDateShort(nextSession.sessionDate)}</p>
-                      <p className="text-gray-500">{nextSession.startTime} – {nextSession.endTime}</p>
-                      <p className="text-gray-400">{nextSession.venue?.name}</p>
+                      <p className="font-bold text-(--bpa-navy)">{fmtDateShort(stats.nextSession.sessionDate)}</p>
+                      <p className="text-gray-500">{stats.nextSession.startTime} – {stats.nextSession.endTime}</p>
+                      <p className="text-gray-400">{stats.nextSession.venueName}</p>
                     </div>
                   )}
 

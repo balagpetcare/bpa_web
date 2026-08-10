@@ -23,6 +23,12 @@
      one step darker so a press is visibly distinct from :hover. */
   --color-bpa-accent: var(--bpa-accent);
   --color-bpa-accent-dark: #d7a228;
+  /* Canonical BPA blue for primary-CTA hover interactions — the same navy
+     blue already used site-wide for headings and focus-visible rings, not a
+     new brand color. Referenced as `--color-bpa-button-hover` (rather than
+     bare `--bpa-navy`) so button interaction styling has one dedicated,
+     renameable token instead of borrowing a heading-semantic variable. */
+  --color-bpa-button-hover: var(--bpa-navy);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -77,4 +83,18 @@ body {
   background: currentColor;
   animation: soft-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
   opacity: 0.75;
+}
+
+/* ─── Reduced motion ──────────────────────────────────────────
+   Sitewide kill-switch for users with prefers-reduced-motion: reduce —
+   covers every Tailwind transition and animate utility (hover scale/translate
+   effects across the homepage sections, card-sheen, soft-ping, carousel
+   fades) without needing motion-reduce: variants on every className. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

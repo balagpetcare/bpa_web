@@ -187,7 +187,7 @@ export default function Header() {
 
               <Link
                 href="/donate"
-                className="hidden sm:inline-flex items-center justify-center gap-1.5 bg-(--bpa-green) text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-(--bpa-green-dark) transition-colors"
+                className="hidden sm:inline-flex items-center justify-center gap-1.5 bg-(--bpa-green) text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-(--color-bpa-button-hover) transition-colors"
               >
                 <Heart size={14} className="fill-current" />
                 Donate
