@@ -12,6 +12,15 @@ export function buildCentralAuthStartUrl(next: string | null | undefined): strin
   return url.toString();
 }
 
+export function buildCentralAuthPopupStartUrl(next: string | null | undefined): string {
+  const url = new URL(`${getApiOrigin()}/api/v1/auth/central-auth/popup/start`);
+  const returnTo = getSafeReturnTo(next);
+  if (returnTo !== '/') {
+    url.searchParams.set('returnTo', returnTo);
+  }
+  return url.toString();
+}
+
 export function buildCentralAuthLogoutUrl(): string {
   const redirectOrigin =
     typeof window !== 'undefined'
