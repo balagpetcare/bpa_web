@@ -38,25 +38,14 @@ export default function LoginToInteract({ action = 'interact' }: Props) {
       <div className="w-12 h-12 bg-white text-(--bpa-green) rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-green-50">
         <Icon size={22} className="stroke-[2.5]" />
       </div>
-      <h4 className="text-lg font-extrabold text-(--bpa-navy) mb-2">
-        {text}
-      </h4>
-      <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-md mx-auto">
-        {desc}
-      </p>
-      <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+      <h4 className="text-lg font-extrabold text-(--bpa-navy) mb-2">{text}</h4>
+      <p className="text-gray-500 text-sm leading-relaxed mb-6 max-w-md mx-auto">{desc}</p>
+      <div className="flex justify-center items-center">
         <Link
           href="/auth/sign-in"
-          className="inline-flex items-center justify-center bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all duration-200 shadow-sm w-full sm:w-auto"
+          className="inline-flex items-center justify-center bg-(--bpa-green) hover:bg-(--color-bpa-button-hover) text-white font-bold text-sm px-6 py-2.5 rounded-xl transition-all duration-200 shadow-sm"
         >
           Sign In
-        </Link>
-        <span className="text-xs text-gray-400 font-bold uppercase">or</span>
-        <Link
-          href="/auth/sign-up"
-          className="inline-flex items-center justify-center bg-white border border-gray-250 text-(--bpa-navy) hover:bg-gray-50 font-bold text-sm px-6 py-2.5 rounded-xl transition-all duration-200 w-full sm:w-auto"
-        >
-          Create Account
         </Link>
       </div>
     </div>
