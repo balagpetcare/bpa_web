@@ -9,7 +9,7 @@ import { consumeStoredReturnTo } from './return-to';
  * destination route itself is responsible for handling "still not signed
  * in" (e.g. the booking page's own sign-in gate), not this callback page.
  */
-export async function completeAuthCallback(refreshUser: () => Promise<void>): Promise<string> {
+export async function completeAuthCallback(refreshUser: () => Promise<unknown>): Promise<string> {
   const destination = consumeStoredReturnTo();
   try {
     await refreshUser();
